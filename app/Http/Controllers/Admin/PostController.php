@@ -58,6 +58,6 @@ class PostController extends Controller
         $title = $post->title;
         $post->delete();
 
-        return back()->with('success', "সাবকন্ট্রাক্ট পোস্ট '{$title}' সফলভাবে মুছে ফেলা হয়েছে।");
+        return back()->with('success', "Subcontract post '{$title}' has been deleted successfully.");
     }
 }

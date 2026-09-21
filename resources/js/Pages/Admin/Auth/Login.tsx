@@ -1,6 +1,6 @@
 import React from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import { Shield, Lock, Mail, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function Login() {
     const { data, setData, post, processing, errors } = useForm({
@@ -16,7 +16,7 @@ export default function Login() {
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 antialiased selection:bg-blue-600 selection:text-white">
-            <Head title="অ্যাডমিন লগইন - শিল্পসেতু" />
+            <Head title="Admin Login - Shilposetu" />
 
             <div className="w-full max-w-md space-y-6">
                 {/* Logo & Header */}
@@ -24,9 +24,9 @@ export default function Login() {
                     <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 items-center justify-center text-white shadow-xl shadow-blue-500/25 mb-1">
                         <Shield className="w-7 h-7" />
                     </div>
-                    <h1 className="text-2xl font-black tracking-tight text-white">শিল্পসেতু অ্যাডমিন কন্ট্রোল</h1>
+                    <h1 className="text-2xl font-black tracking-tight text-white">Shilposetu Admin Portal</h1>
                     <p className="text-xs text-slate-400">
-                        শুধুমাত্র অনুমোদিত অ্যাডমিনিস্ট্রেটরদের প্রবেশের জন্য সংরক্ষিত
+                        Authorized administrative access only
                     </p>
                 </div>
 
@@ -36,7 +36,7 @@ export default function Login() {
                         {/* Email */}
                         <div>
                             <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                                অ্যাডমিন ইমেইল (Admin Email)
+                                Admin Email
                             </label>
                             <div className="relative">
                                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -61,7 +61,7 @@ export default function Login() {
                         {/* Password */}
                         <div>
                             <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                                পাসওয়ার্ড (Password)
+                                Password
                             </label>
                             <div className="relative">
                                 <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -91,7 +91,7 @@ export default function Login() {
                                     onChange={(e) => setData('remember', e.target.checked)}
                                     className="rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-0 focus:ring-offset-0"
                                 />
-                                <span>আমাকে মনে রাখুন (Remember me)</span>
+                                <span>Remember me</span>
                             </label>
                         </div>
 
@@ -99,16 +99,16 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition disabled:opacity-50"
+                            className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition disabled:opacity-50 cursor-pointer"
                         >
-                            <span>লগইন করুন (Sign In)</span>
+                            <span>Sign In</span>
                             <ArrowRight className="w-4 h-4" />
                         </button>
                     </form>
                 </div>
 
                 <div className="text-center text-[11px] text-slate-500">
-                    শিল্পসেতু ইন্ডাস্ট্রিয়াল প্ল্যাটফর্ম © {new Date().getFullYear()} — সকল স্বত্ব সংরক্ষিত।
+                    Shilposetu Industrial Platform © {new Date().getFullYear()} — All rights reserved.
                 </div>
             </div>
         </div>

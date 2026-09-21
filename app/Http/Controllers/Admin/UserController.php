@@ -67,14 +67,14 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         if ($user->id === auth()->id()) {
-            return back()->with('error', 'আপনি নিজের অ্যাকাউন্ট স্থগিত করতে পারবেন না।');
+            return back()->with('error', 'You cannot suspend your own administrator account.');
         }
 
         $newStatus = $user->status === 'active' ? 'suspended' : 'active';
         $user->update(['status' => $newStatus]);
 
-        $statusText = $newStatus === 'active' ? 'অ্যাক্টিভ' : 'স্থগিত (Suspended)';
+        $statusText = $newStatus === 'active' ? 'activated' : 'suspended';
 
-        return back()->with('success', "ইউজার '{$user->name}' সফলভাবে {$statusText} করা হয়েছে।");
+        return back()->with('success', "User '{$user->name}' has been successfully {$statusText}.");
     }
 }

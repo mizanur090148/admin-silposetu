@@ -47,7 +47,7 @@ class AuthController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('admin.login')->with('error', 'অ্যাক্সেস প্রত্যাখ্যান করা হয়েছে। শুধুমাত্র অ্যাডমিনদের প্রবেশাধিকার রয়েছে।');
+            return redirect()->route('admin.login')->with('error', 'Access denied. Administrator credentials required.');
         }
 
         if ($user->status === 'suspended') {
@@ -55,7 +55,7 @@ class AuthController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('admin.login')->with('error', 'আপনার অ্যাডমিন অ্যাকাউন্টটি সাময়িকভাবে স্থগিত রয়েছে।');
+            return redirect()->route('admin.login')->with('error', 'Your administrator account has been suspended.');
         }
 
         $request->session()->regenerate();
@@ -73,6 +73,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('admin.login')->with('success', 'সফলভাবে লগআউট করা হয়েছে।');
+        return redirect()->route('admin.login')->with('success', 'You have been logged out successfully.');
     }
 }

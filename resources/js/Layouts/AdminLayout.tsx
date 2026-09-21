@@ -13,7 +13,6 @@ import {
     X,
     Shield,
     ChevronRight,
-    ExternalLink
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -28,13 +27,13 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
 
     const navItems = [
         {
-            name: 'ড্যাশবোর্ড (Dashboard)',
+            name: 'Dashboard',
             href: route('admin.dashboard'),
             icon: LayoutDashboard,
             active: route().current('admin.dashboard') || route().current('admin.home'),
         },
         {
-            name: 'পেন্ডিং ভেরিফিকেশন',
+            name: 'Pending Verifications',
             href: route('admin.factories.index') + '?tab=pending',
             icon: Clock,
             active: route().current('admin.factories.*') && (new URLSearchParams(window.location.search).get('tab') === 'pending' || !new URLSearchParams(window.location.search).get('tab')),
@@ -42,19 +41,19 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             badgeColor: 'bg-amber-500 text-slate-950 font-black',
         },
         {
-            name: 'সকল ফ্যাক্টরি (Factories)',
+            name: 'All Factories',
             href: route('admin.factories.index') + '?tab=all',
             icon: Factory,
             active: route().current('admin.factories.*') && new URLSearchParams(window.location.search).get('tab') !== 'pending',
         },
         {
-            name: 'সকল ইউজার (Users)',
+            name: 'Users',
             href: route('admin.users.index'),
             icon: Users,
             active: route().current('admin.users.*'),
         },
         {
-            name: 'সাবকন্ট্রাক্ট পোস্ট (Posts)',
+            name: 'Subcontract Posts',
             href: route('admin.posts.index'),
             icon: FileText,
             active: route().current('admin.posts.*'),
@@ -78,7 +77,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         </div>
                         <div>
                             <div className="flex items-center gap-1.5">
-                                <span className="font-black text-sm tracking-wide text-white">শিল্পসেতু</span>
+                                <span className="font-black text-sm tracking-wide text-white">Shilposetu</span>
                                 <span className="text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
                                     Admin
                                 </span>
@@ -102,7 +101,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:text-white bg-rose-500/10 hover:bg-rose-600/30 border border-rose-500/20 rounded-xl transition"
                     >
                         <LogOut className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">লগআউট</span>
+                        <span className="hidden sm:inline">Logout</span>
                     </Link>
                 </div>
             </header>
@@ -111,7 +110,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                 {/* Desktop Sidebar */}
                 <aside className="hidden lg:flex flex-col w-64 border-r border-slate-800/80 bg-slate-900/50 p-4 shrink-0">
                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-3 mb-2">
-                        মেইন মেনু
+                        Main Menu
                     </div>
                     <nav className="space-y-1.5 flex-1">
                         {navItems.map((item) => (
@@ -142,16 +141,16 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
                             <div className="flex items-center gap-2 text-xs font-bold mb-1">
                                 <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                                <span>{pendingCount} ফ্যাক্টরি পেন্ডিং</span>
+                                <span>{pendingCount} Factories Pending</span>
                             </div>
                             <p className="text-[10px] text-amber-200/80 leading-relaxed">
-                                নতুন ফ্যাক্টরি রিভিউ এবং অনুমোদনের অপেক্ষায় রয়েছে।
+                                New factory registrations are awaiting review and verification.
                             </p>
                             <Link
                                 href={route('admin.factories.index') + '?tab=pending'}
                                 className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 hover:underline"
                             >
-                                দেখতে ক্লিক করুন <ChevronRight className="w-3 h-3" />
+                                View pending list <ChevronRight className="w-3 h-3" />
                             </Link>
                         </div>
                     )}
@@ -163,7 +162,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setMobileOpen(false)} />
                         <div className="relative w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col z-10">
                             <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
-                                <span className="font-bold text-sm text-white">মেনু</span>
+                                <span className="font-bold text-sm text-white">Menu</span>
                                 <button onClick={() => setMobileOpen(false)} className="p-1 rounded text-slate-400 hover:text-white">
                                     <X className="w-5 h-5" />
                                 </button>

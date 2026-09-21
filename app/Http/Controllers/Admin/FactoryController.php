@@ -109,7 +109,7 @@ class FactoryController extends Controller
             $user->factory->update(['is_verified' => true]);
         }
 
-        return back()->with('success', "ফ্যাক্টরি '{$user->name}' সফলভাবে অ্যাক্টিভ ও ভেরিফাইড করা হয়েছে।");
+        return back()->with('success', "Factory '{$user->name}' has been successfully approved and verified.");
     }
 
     /**
@@ -120,7 +120,7 @@ class FactoryController extends Controller
         $user = User::findOrFail($id);
         $user->update(['status' => 'suspended']);
 
-        return back()->with('success', "ফ্যাক্টরি '{$user->name}' সাময়িকভাবে স্থগিত (Suspended) করা হয়েছে।");
+        return back()->with('success', "Factory '{$user->name}' has been suspended.");
     }
 
     /**
@@ -131,6 +131,6 @@ class FactoryController extends Controller
         $user = User::findOrFail($id);
         $user->update(['status' => 'active']);
 
-        return back()->with('success', "ফ্যাক্টরি '{$user->name}' সফলভাবে আনব্লক করা হয়েছে।");
+        return back()->with('success', "Factory '{$user->name}' has been unblocked successfully.");
     }
 }

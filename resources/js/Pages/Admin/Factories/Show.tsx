@@ -58,26 +58,26 @@ export default function Show({ user }: Props) {
     const factory = user.factory;
 
     const handleApprove = () => {
-        if (confirm(`আপনি কি নিশ্চিত যে '${factory?.business_name || user.name}' ফ্যাক্টরি অ্যাকাউন্টটি অনুমোদন (Approve) ও অ্যাক্টিভ করবেন?`)) {
+        if (confirm(`Are you sure you want to approve and activate the factory account '${factory?.business_name || user.name}'?`)) {
             router.post(route('admin.factories.approve', user.id));
         }
     };
 
     const handleBlock = () => {
-        if (confirm(`সতর্কতা: আপনি কি নিশ্চিত যে '${factory?.business_name || user.name}' অ্যাকাউন্টটি ব্লক/স্থগিত (Suspend) করবেন?`)) {
+        if (confirm(`Warning: Are you sure you want to suspend/block the account '${factory?.business_name || user.name}'?`)) {
             router.post(route('admin.factories.block', user.id));
         }
     };
 
     const handleUnblock = () => {
-        if (confirm(`আপনি কি নিশ্চিত যে '${factory?.business_name || user.name}' অ্যাকাউন্টটি পুনরায় সক্রিয় (Unblock) করবেন?`)) {
+        if (confirm(`Are you sure you want to unblock and reactivate the account '${factory?.business_name || user.name}'?`)) {
             router.post(route('admin.factories.unblock', user.id));
         }
     };
 
     return (
-        <AdminLayout title="ফ্যাক্টরি তথ্য রিভিউ">
-            <Head title={`রিভিউ: ${factory?.business_name || user.name} - শিল্পসেতু অ্যাডমিন`} />
+        <AdminLayout title="Factory Review">
+            <Head title={`Review: ${factory?.business_name || user.name} - Shilposetu Admin`} />
 
             <div className="space-y-6">
                 {/* Back link & Top Bar */}
@@ -112,7 +112,7 @@ export default function Show({ user }: Props) {
                                 )}
                             </div>
                             <p className="text-xs text-slate-400 font-mono mt-0.5">
-                                কাস্টমার আইডি: {user.customer_id || `S${user.id}`} • নিবন্ধনের তারিখ: {new Date(user.created_at).toLocaleDateString()}
+                                Customer ID: {user.customer_id || `S${user.id}`} • Registered Date: {new Date(user.created_at).toLocaleDateString()}
                             </p>
                         </div>
                     </div>
@@ -125,7 +125,7 @@ export default function Show({ user }: Props) {
                                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-lg shadow-emerald-600/20 transition transform active:scale-95"
                             >
                                 <Check className="w-4 h-4" />
-                                <span>অনুমোদন ও সক্রিয় করুন (Approve & Active)</span>
+                                <span>Approve & Activate</span>
                             </button>
                         )}
 
@@ -135,7 +135,7 @@ export default function Show({ user }: Props) {
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-rose-300 bg-rose-500/10 hover:bg-rose-600 hover:text-white border border-rose-500/20 transition"
                             >
                                 <Ban className="w-4 h-4" />
-                                <span>অ্যাকাউন্ট স্থগিত করুন (Block)</span>
+                                <span>Suspend Account</span>
                             </button>
                         )}
 
@@ -145,7 +145,7 @@ export default function Show({ user }: Props) {
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-600 hover:text-white border border-emerald-500/20 transition"
                             >
                                 <Check className="w-4 h-4" />
-                                <span>পুনরায় সক্রিয় করুন (Unblock)</span>
+                                <span>Unblock Account</span>
                             </button>
                         )}
                     </div>
@@ -159,28 +159,28 @@ export default function Show({ user }: Props) {
                         <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 space-y-4">
                             <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
                                 <Building2 className="w-4 h-4 text-blue-400" />
-                                <span>ফ্যাক্টরির পরিচিতি ও তথ্য</span>
+                                <span>Factory Profile & Overview</span>
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                 <div>
-                                    <span className="text-slate-500 block mb-1">প্রতিষ্ঠানের নাম:</span>
+                                    <span className="text-slate-500 block mb-1">Company / Factory Name:</span>
                                     <span className="font-semibold text-slate-200">{factory?.business_name || 'N/A'}</span>
                                 </div>
                                 <div>
-                                    <span className="text-slate-500 block mb-1">ইন্ডাস্ট্রি টাইপ:</span>
+                                    <span className="text-slate-500 block mb-1">Industry Type:</span>
                                     <span className="font-semibold text-slate-200">{factory?.industry_type || 'Apparel & Garments'}</span>
                                 </div>
                                 <div>
-                                    <span className="text-slate-500 block mb-1">মালিক / ফোকাল পার্সন:</span>
+                                    <span className="text-slate-500 block mb-1">Owner / Contact Person:</span>
                                     <span className="font-semibold text-slate-200">{factory?.contact_person || user.name}</span>
                                 </div>
                                 <div>
-                                    <span className="text-slate-500 block mb-1">জেলা (District):</span>
+                                    <span className="text-slate-500 block mb-1">District:</span>
                                     <span className="font-semibold text-slate-200">{factory?.district || 'N/A'}</span>
                                 </div>
                                 <div className="sm:col-span-2">
-                                    <span className="text-slate-500 block mb-1">পূর্ণ ঠিকানা:</span>
-                                    <span className="font-semibold text-slate-200">{factory?.address || 'ঠিকানা দেওয়া হয়নি'}</span>
+                                    <span className="text-slate-500 block mb-1">Full Address:</span>
+                                    <span className="font-semibold text-slate-200">{factory?.address || 'Address not provided'}</span>
                                 </div>
                             </div>
                         </div>
@@ -189,23 +189,23 @@ export default function Show({ user }: Props) {
                         <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 space-y-4">
                             <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
                                 <Layers className="w-4 h-4 text-indigo-400" />
-                                <span>উৎপাদন সক্ষমতা ও অবকাঠামো (Capacity)</span>
+                                <span>Production Capacity & Infrastructure</span>
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                                 <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60">
-                                    <span className="text-slate-400 block text-[11px]">মোট লাইন সংখ্যা</span>
+                                    <span className="text-slate-400 block text-[11px]">Total Lines</span>
                                     <span className="text-xl font-black text-white mt-1 block">
                                         {factory?.total_lines || 0} Lines
                                     </span>
                                 </div>
                                 <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60">
-                                    <span className="text-slate-400 block text-[11px]">মোট মেশিন সংখ্যা</span>
+                                    <span className="text-slate-400 block text-[11px]">Total Machines</span>
                                     <span className="text-xl font-black text-white mt-1 block">
                                         {factory?.total_machines || 0} Machines
                                     </span>
                                 </div>
                                 <div className="p-3 bg-slate-800/50 rounded-xl border border-slate-700/60">
-                                    <span className="text-slate-400 block text-[11px]">দৈনিক ক্যাপাসিটি</span>
+                                    <span className="text-slate-400 block text-[11px]">Daily Capacity</span>
                                     <span className="text-xl font-black text-white mt-1 block">
                                         {factory?.daily_capacity || 'N/A'}
                                     </span>
@@ -217,31 +217,31 @@ export default function Show({ user }: Props) {
                         <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 space-y-4">
                             <h2 className="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
                                 <Shield className="w-4 h-4 text-emerald-400" />
-                                <span>আইনি ও ভেরিফিকেশন ডকুমেন্টস (KYC)</span>
+                                <span>Legal & Verification Documents (KYC)</span>
                             </h2>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                 <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/60 space-y-1">
-                                    <span className="text-slate-500 block">ট্রেড লাইসেন্স নম্বর:</span>
+                                    <span className="text-slate-500 block">Trade License Number:</span>
                                     <span className="font-mono font-bold text-slate-200 text-sm">
-                                        {factory?.trade_license_no || 'সংযুক্ত নেই'}
+                                        {factory?.trade_license_no || 'Not attached'}
                                     </span>
                                 </div>
                                 <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/60 space-y-1">
-                                    <span className="text-slate-500 block">TIN সার্টিফিকেট নম্বর:</span>
+                                    <span className="text-slate-500 block">TIN Certificate Number:</span>
                                     <span className="font-mono font-bold text-slate-200 text-sm">
-                                        {factory?.tin_no || 'সংযুক্ত নেই'}
+                                        {factory?.tin_no || 'Not attached'}
                                     </span>
                                 </div>
                                 <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/60 space-y-1">
-                                    <span className="text-slate-500 block">BIN / VAT নম্বর:</span>
+                                    <span className="text-slate-500 block">BIN / VAT Number:</span>
                                     <span className="font-mono font-bold text-slate-200 text-sm">
-                                        {factory?.bin_no || 'সংযুক্ত নেই'}
+                                        {factory?.bin_no || 'Not attached'}
                                     </span>
                                 </div>
                                 <div className="p-3 bg-slate-800/40 rounded-xl border border-slate-700/60 space-y-1">
-                                    <span className="text-slate-500 block">জাতীয় পরিচয়পত্র (NID) নম্বর:</span>
+                                    <span className="text-slate-500 block">National ID (NID) Number:</span>
                                     <span className="font-mono font-bold text-slate-200 text-sm">
-                                        {user.nid_number || 'সংযুক্ত নেই'}
+                                        {user.nid_number || 'Not attached'}
                                     </span>
                                 </div>
                             </div>
@@ -253,21 +253,21 @@ export default function Show({ user }: Props) {
                         {/* Account Status Card */}
                         <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 space-y-4">
                             <h2 className="text-sm font-bold text-white border-b border-slate-800 pb-3">
-                                অ্যাকাউন্ট স্ট্যাটাস
+                                Account Status
                             </h2>
                             <div className="space-y-3 text-xs">
                                 <div className="flex items-center justify-between">
-                                    <span className="text-slate-400">স্ট্যাটাস:</span>
+                                    <span className="text-slate-400">Status:</span>
                                     <span className="font-bold text-white uppercase">{user.status}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-slate-400">ভেরিফাইড ব্যাজ:</span>
+                                    <span className="text-slate-400">Verified Badge:</span>
                                     <span className={`font-bold ${factory?.is_verified ? 'text-emerald-400' : 'text-amber-400'}`}>
                                         {factory?.is_verified ? 'Yes (Verified)' : 'No (Pending)'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
-                                    <span className="text-slate-400">কাস্টমার আইডি:</span>
+                                    <span className="text-slate-400">Customer ID:</span>
                                     <span className="font-mono font-bold text-blue-400">{user.customer_id || `S${user.id}`}</span>
                                 </div>
                             </div>
@@ -276,12 +276,12 @@ export default function Show({ user }: Props) {
                         {/* Contact Info Card */}
                         <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 space-y-3">
                             <h2 className="text-sm font-bold text-white border-b border-slate-800 pb-3">
-                                যোগাযোগের তথ্য
+                                Contact Information
                             </h2>
                             <div className="space-y-2.5 text-xs text-slate-300">
                                 <div className="flex items-center gap-2.5">
                                     <Phone className="w-4 h-4 text-slate-500 shrink-0" />
-                                    <span>{user.phone || 'ফোন নম্বর নেই'}</span>
+                                    <span>{user.phone || 'No phone number provided'}</span>
                                 </div>
                                 <div className="flex items-center gap-2.5">
                                     <Mail className="w-4 h-4 text-slate-500 shrink-0" />
@@ -289,7 +289,7 @@ export default function Show({ user }: Props) {
                                 </div>
                                 <div className="flex items-center gap-2.5">
                                     <MapPin className="w-4 h-4 text-slate-500 shrink-0" />
-                                    <span>{factory?.district || 'Gazipur'}, বাংলাদেশ</span>
+                                    <span>{factory?.district || 'Gazipur'}, Bangladesh</span>
                                 </div>
                             </div>
                         </div>

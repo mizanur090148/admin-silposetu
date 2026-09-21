@@ -31,22 +31,22 @@ export default function Index({ posts, filters, totalPosts }: Props) {
     };
 
     const handleDelete = (id: number, title: string) => {
-        if (confirm(`সতর্কতা: আপনি কি নিশ্চিত যে সাব-কন্ট্রাক্ট পোস্ট '${title}' মুছে ফেলতে চান?`)) {
+        if (confirm(`Warning: Are you sure you want to delete the subcontract post '${title}'?`)) {
             router.delete(route('admin.posts.destroy', id));
         }
     };
 
     return (
-        <AdminLayout title="সাব-কন্ট্রাক্ট পোস্টসমূহ">
-            <Head title="সাব-কন্ট্রাক্ট পোস্ট ম্যানেজমেন্ট - শিল্পসেতু অ্যাডমিন" />
+        <AdminLayout title="Subcontract Orders">
+            <Head title="Subcontract Order Moderation - Shilposetu Admin" />
 
             <div className="space-y-5">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-xl font-black text-white">সাব-কন্ট্রাক্ট অর্ডার পোস্ট মডারেশন</h1>
+                        <h1 className="text-xl font-black text-white">Subcontract Order Moderation</h1>
                         <p className="text-xs text-slate-400">
-                            মার্কেটপ্লেসে প্রকাশিত সকল সাব-কন্ট্রাক্ট অর্ডার পর্যবেক্ষণ এবং স্প্যাম প্রতিরোধ করুন। (মোট {totalPosts}টি)
+                            Monitor all marketplace subcontract orders and prevent spam. (Total: {totalPosts})
                         </p>
                     </div>
                 </div>
@@ -59,7 +59,7 @@ export default function Index({ posts, filters, totalPosts }: Props) {
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="পোস্টের শিরোনাম বা জেলা দিয়ে খুঁজুন..."
+                            placeholder="Search by title or district..."
                             className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
                         />
                     </form>
@@ -70,19 +70,19 @@ export default function Index({ posts, filters, totalPosts }: Props) {
                     {posts.data.length === 0 ? (
                         <div className="py-12 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
                             <FileText className="w-10 h-10 text-slate-700" />
-                            <span>কোনো সাব-কন্ট্রাক্ট পোস্ট পাওয়া যায়নি।</span>
+                            <span>No subcontract orders found.</span>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-xs">
                                 <thead className="border-b border-slate-800 bg-slate-900/60 text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                     <tr>
-                                        <th className="py-3.5 px-4">অর্ডারের শিরোনাম</th>
-                                        <th className="py-3.5 px-3">ক্যাটাগরি</th>
-                                        <th className="py-3.5 px-3">পোস্টকারী ফ্যাক্টরি</th>
-                                        <th className="py-3.5 px-3">পরিমাণ (Target)</th>
-                                        <th className="py-3.5 px-3">তারিখ</th>
-                                        <th className="py-3.5 px-4 text-right">অ্যাকশন</th>
+                                        <th className="py-3.5 px-4">Order Title</th>
+                                        <th className="py-3.5 px-3">Category</th>
+                                        <th className="py-3.5 px-3">Factory</th>
+                                        <th className="py-3.5 px-3">Target Quantity</th>
+                                        <th className="py-3.5 px-3">Date</th>
+                                        <th className="py-3.5 px-4 text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-800/60">
@@ -116,7 +116,7 @@ export default function Index({ posts, filters, totalPosts }: Props) {
                                                     className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-300 bg-rose-500/10 hover:bg-rose-600 hover:text-white border border-rose-500/20 transition"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
-                                                    <span>ডিলিট</span>
+                                                    <span>Delete</span>
                                                 </button>
                                             </td>
                                         </tr>
@@ -130,17 +130,17 @@ export default function Index({ posts, filters, totalPosts }: Props) {
                     {posts.last_page > 1 && (
                         <div className="border-t border-slate-800 px-4 py-3 flex items-center justify-between text-xs text-slate-400">
                             <div>
-                                পৃষ্ঠা {posts.current_page} এর {posts.last_page} (মোট {posts.total}টি)
+                                Page {posts.current_page} of {posts.last_page} (Total {posts.total})
                             </div>
                             <div className="flex gap-2">
                                 {posts.prev_page_url && (
                                     <Link href={posts.prev_page_url} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-medium">
-                                        আগেরটি
+                                        Previous
                                     </Link>
                                 )}
                                 {posts.next_page_url && (
                                     <Link href={posts.next_page_url} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium">
-                                        পরেরটি
+                                        Next
                                     </Link>
                                 )}
                             </div>
