@@ -1,0 +1,222 @@
+import React, { useState } from 'react';
+import { Link, usePage } from '@inertiajs/react';
+import {
+    LayoutDashboard,
+    Factory,
+    Clock,
+    Users,
+    FileText,
+    LogOut,
+    CheckCircle,
+    AlertCircle,
+    Menu,
+    X,
+    Shield,
+    ChevronRight,
+    ExternalLink
+} from 'lucide-react';
+
+interface AdminLayoutProps {
+    children: React.ReactNode;
+    title?: string;
+}
+
+export default function AdminLayout({ children, title }: AdminLayoutProps) {
+    const { auth, pendingCount, flash } = usePage<any>().props;
+    const user = auth?.user;
+    const [mobileOpen, setMobileOpen] = useState(false);
+
+    const navItems = [
+        {
+            name: 'ড্যাশবোর্ড (Dashboard)',
+            href: route('admin.dashboard'),
+            icon: LayoutDashboard,
+            active: route().current('admin.dashboard') || route().current('admin.home'),
+        },
+        {
+            name: 'পেন্ডিং ভেরিফিকেশন',
+            href: route('admin.factories.index') + '?tab=pending',
+            icon: Clock,
+            active: route().current('admin.factories.*') && (new URLSearchParams(window.location.search).get('tab') === 'pending' || !new URLSearchParams(window.location.search).get('tab')),
+            badge: pendingCount > 0 ? pendingCount : null,
+            badgeColor: 'bg-amber-500 text-slate-950 font-black',
+        },
+        {
+            name: 'সকল ফ্যাক্টরি (Factories)',
+            href: route('admin.factories.index') + '?tab=all',
+            icon: Factory,
+            active: route().current('admin.factories.*') && new URLSearchParams(window.location.search).get('tab') !== 'pending',
+        },
+        {
+            name: 'সকল ইউজার (Users)',
+            href: route('admin.users.index'),
+            icon: Users,
+            active: route().current('admin.users.*'),
+        },
+        {
+            name: 'সাবকন্ট্রাক্ট পোস্ট (Posts)',
+            href: route('admin.posts.index'),
+            icon: FileText,
+            active: route().current('admin.posts.*'),
+        },
+    ];
+
+    return (
+        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col antialiased">
+            {/* Top Navigation Bar */}
+            <header className="h-16 border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        className="lg:hidden p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white"
+                    >
+                        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </button>
+                    <Link href={route('admin.dashboard')} className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                            <Shield className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-1.5">
+                                <span className="font-black text-sm tracking-wide text-white">শিল্পসেতু</span>
+                                <span className="text-[10px] font-bold uppercase bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded border border-blue-500/30">
+                                    Admin
+                                </span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-mono">Control Center</p>
+                        </div>
+                    </Link>
+                </div>
+
+                {/* Right Profile & Actions */}
+                <div className="flex items-center gap-3">
+                    <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/80 border border-slate-700/60">
+                        <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                        <span className="text-xs text-slate-300 font-medium">{user?.name || 'Administrator'}</span>
+                    </div>
+
+                    <Link
+                        href={route('admin.logout')}
+                        method="post"
+                        as="button"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-300 hover:text-white bg-rose-500/10 hover:bg-rose-600/30 border border-rose-500/20 rounded-xl transition"
+                    >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">লগআউট</span>
+                    </Link>
+                </div>
+            </header>
+
+            <div className="flex-1 flex overflow-hidden">
+                {/* Desktop Sidebar */}
+                <aside className="hidden lg:flex flex-col w-64 border-r border-slate-800/80 bg-slate-900/50 p-4 shrink-0">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-3 mb-2">
+                        মেইন মেনু
+                    </div>
+                    <nav className="space-y-1.5 flex-1">
+                        {navItems.map((item) => (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                                    item.active
+                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <item.icon className={`w-4 h-4 ${item.active ? 'text-white' : 'text-slate-400'}`} />
+                                    <span>{item.name}</span>
+                                </div>
+                                {item.badge && (
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.badgeColor}`}>
+                                        {item.badge}
+                                    </span>
+                                )}
+                            </Link>
+                        ))}
+                    </nav>
+
+                    {/* Pending review quick info card */}
+                    {pendingCount > 0 && (
+                        <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                            <div className="flex items-center gap-2 text-xs font-bold mb-1">
+                                <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                                <span>{pendingCount} ফ্যাক্টরি পেন্ডিং</span>
+                            </div>
+                            <p className="text-[10px] text-amber-200/80 leading-relaxed">
+                                নতুন ফ্যাক্টরি রিভিউ এবং অনুমোদনের অপেক্ষায় রয়েছে।
+                            </p>
+                            <Link
+                                href={route('admin.factories.index') + '?tab=pending'}
+                                className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-amber-400 hover:underline"
+                            >
+                                দেখতে ক্লিক করুন <ChevronRight className="w-3 h-3" />
+                            </Link>
+                        </div>
+                    )}
+                </aside>
+
+                {/* Mobile Drawer */}
+                {mobileOpen && (
+                    <div className="fixed inset-0 z-50 lg:hidden flex">
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setMobileOpen(false)} />
+                        <div className="relative w-64 bg-slate-900 border-r border-slate-800 p-4 flex flex-col z-10">
+                            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
+                                <span className="font-bold text-sm text-white">মেনু</span>
+                                <button onClick={() => setMobileOpen(false)} className="p-1 rounded text-slate-400 hover:text-white">
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <nav className="space-y-1.5 flex-1">
+                                {navItems.map((item) => (
+                                    <Link
+                                        key={item.name}
+                                        href={item.href}
+                                        onClick={() => setMobileOpen(false)}
+                                        className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition ${
+                                            item.active
+                                                ? 'bg-blue-600 text-white shadow-md'
+                                                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <item.icon className="w-4 h-4" />
+                                            <span>{item.name}</span>
+                                        </div>
+                                        {item.badge && (
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${item.badgeColor}`}>
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </Link>
+                                ))}
+                            </nav>
+                        </div>
+                    </div>
+                )}
+
+                {/* Main Content */}
+                <div className="flex-1 flex flex-col overflow-y-auto bg-slate-950">
+                    {/* Flash messages */}
+                    {flash?.success && (
+                        <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-3 text-emerald-300 text-xs sm:text-sm flex items-center gap-2.5">
+                            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                            <span>{flash.success}</span>
+                        </div>
+                    )}
+                    {flash?.error && (
+                        <div className="bg-rose-500/10 border-b border-rose-500/20 px-4 py-3 text-rose-300 text-xs sm:text-sm flex items-center gap-2.5">
+                            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                            <span>{flash.error}</span>
+                        </div>
+                    )}
+
+                    <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6">
+                        {children}
+                    </main>
+                </div>
+            </div>
+        </div>
+    );
+}
