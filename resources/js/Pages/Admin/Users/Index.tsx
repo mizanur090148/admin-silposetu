@@ -2,20 +2,16 @@ import React, { useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Users, Search, ShieldAlert, CheckCircle, Ban, Check, Phone, Mail, Plus, X, UserPlus } from 'lucide-react';
+import Pagination from '@/Components/Pagination';
+import { PaginatedData, User } from '@/types';
 
 interface Props {
-    users: {
-        data: Array<any>;
-        current_page: number;
-        last_page: number;
-        prev_page_url: string | null;
-        next_page_url: string | null;
-        total: number;
-    };
+    users: PaginatedData<User>;
     filters: {
         role: string;
         status: string;
         search: string;
+        per_page?: number;
     };
     stats: {
         total: number;
@@ -46,6 +42,7 @@ export default function Index({ users, filters, stats }: Props) {
         router.get(route('admin.users.index'), {
             ...filters,
             search,
+            page: 1,
         }, { preserveState: true });
     };
 
@@ -53,6 +50,15 @@ export default function Index({ users, filters, stats }: Props) {
         router.get(route('admin.users.index'), {
             ...filters,
             [key]: value,
+            page: 1,
+        }, { preserveState: true });
+    };
+
+    const handlePerPageChange = (perPage: number) => {
+        router.get(route('admin.users.index'), {
+            ...filters,
+            per_page: perPage,
+            page: 1,
         }, { preserveState: true });
     };
 
@@ -223,26 +229,16 @@ export default function Index({ users, filters, stats }: Props) {
                         </table>
                     </div>
 
-                    {/* Pagination */}
-                    {users.last_page > 1 && (
-                        <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                            <div>
-                                Page {users.current_page} of {users.last_page} (Total {users.total})
-                            </div>
-                            <div className="flex gap-2">
-                                {users.prev_page_url && (
-                                    <Link href={users.prev_page_url} className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white rounded-lg font-medium transition">
-                                        Previous
-                                    </Link>
-                                )}
-                                {users.next_page_url && (
-                                    <Link href={users.next_page_url} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition">
-                                        Next
-                                    </Link>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                    {/* Server-Side Pagination */}
+                    <Pagination
+                        links={users.links}
+                        from={users.from}
+                        to={users.to}
+                        total={users.total}
+                        perPage={filters.per_page || users.per_page}
+                        onPerPageChange={handlePerPageChange}
+                        itemName="users"
+                    />
                 </div>
 
                 {/* MODAL: ADD USER */}

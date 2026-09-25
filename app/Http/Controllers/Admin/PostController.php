@@ -18,6 +18,10 @@ class PostController extends Controller
     {
         $search = $request->input('search', '');
         $status = $request->input('status', 'all');
+        $perPage = (int) $request->input('per_page', 15);
+        if ($perPage < 5 || $perPage > 100) {
+            $perPage = 15;
+        }
 
         $query = SubcontractPost::with([
             'user:id,name,customer_id,phone',
@@ -37,13 +41,14 @@ class PostController extends Controller
             });
         }
 
-        $posts = $query->latest()->paginate(15)->withQueryString();
+        $posts = $query->latest()->paginate($perPage)->withQueryString();
 
         return Inertia::render('Admin/Posts/Index', [
             'posts' => $posts,
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'per_page' => $perPage,
             ],
             'totalPosts' => SubcontractPost::count(),
         ]);

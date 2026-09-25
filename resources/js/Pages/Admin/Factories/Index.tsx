@@ -16,16 +16,11 @@ import {
     Plus,
     Upload,
 } from 'lucide-react';
+import Pagination from '@/Components/Pagination';
+import { PaginatedData, User } from '@/types';
 
 interface Props {
-    factories: {
-        data: Array<any>;
-        current_page: number;
-        last_page: number;
-        prev_page_url: string | null;
-        next_page_url: string | null;
-        total: number;
-    };
+    factories: PaginatedData<User>;
     counts: {
         pending: number;
         active: number;
@@ -36,6 +31,7 @@ interface Props {
         tab: string;
         search: string;
         district: string;
+        per_page?: number;
     };
     districts: string[];
 }
@@ -48,6 +44,7 @@ export default function Index({ factories, counts, filters, districts }: Props) 
         router.get(route('admin.factories.index'), {
             ...filters,
             search,
+            page: 1,
         }, { preserveState: true });
     };
 
@@ -55,6 +52,7 @@ export default function Index({ factories, counts, filters, districts }: Props) 
         router.get(route('admin.factories.index'), {
             ...filters,
             tab,
+            page: 1,
         }, { preserveState: true });
     };
 
@@ -62,6 +60,15 @@ export default function Index({ factories, counts, filters, districts }: Props) 
         router.get(route('admin.factories.index'), {
             ...filters,
             district,
+            page: 1,
+        }, { preserveState: true });
+    };
+
+    const handlePerPageChange = (perPage: number) => {
+        router.get(route('admin.factories.index'), {
+            ...filters,
+            per_page: perPage,
+            page: 1,
         }, { preserveState: true });
     };
 
@@ -331,32 +338,16 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                         </div>
                     )}
 
-                    {/* Pagination */}
-                    {factories.last_page > 1 && (
-                        <div className="border-t border-slate-200 dark:border-slate-800 px-4 py-3 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                            <div>
-                                Page {factories.current_page} of {factories.last_page} (Total {factories.total} factories)
-                            </div>
-                            <div className="flex gap-2">
-                                {factories.prev_page_url && (
-                                    <Link
-                                        href={factories.prev_page_url}
-                                        className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-white rounded-lg font-medium"
-                                    >
-                                        Previous
-                                    </Link>
-                                )}
-                                {factories.next_page_url && (
-                                    <Link
-                                        href={factories.next_page_url}
-                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium"
-                                    >
-                                        Next
-                                    </Link>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                    {/* Server-Side Pagination */}
+                    <Pagination
+                        links={factories.links}
+                        from={factories.from}
+                        to={factories.to}
+                        total={factories.total}
+                        perPage={filters.per_page || factories.per_page}
+                        onPerPageChange={handlePerPageChange}
+                        itemName="factories"
+                    />
                 </div>
             </div>
         </AdminLayout>

@@ -35,6 +35,10 @@ class MachineTypeController extends Controller
     {
         $category = $request->input('category', 'all');
         $search = $request->input('search', '');
+        $perPage = (int) $request->input('per_page', 25);
+        if ($perPage < 5 || $perPage > 100) {
+            $perPage = 25;
+        }
 
         $query = MachineType::query();
 
@@ -51,7 +55,7 @@ class MachineTypeController extends Controller
             });
         }
 
-        $machineTypes = $query->orderBy('category')->orderBy('sort_order')->paginate(25)->withQueryString();
+        $machineTypes = $query->orderBy('category')->orderBy('sort_order')->paginate($perPage)->withQueryString();
 
         $categoryCounts = [];
         foreach (self::CATEGORIES as $key => $label) {
@@ -67,6 +71,7 @@ class MachineTypeController extends Controller
             'filters' => [
                 'category' => $category,
                 'search' => $search,
+                'per_page' => $perPage,
             ],
         ]);
     }

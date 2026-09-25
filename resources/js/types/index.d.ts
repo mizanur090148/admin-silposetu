@@ -71,11 +71,31 @@ export interface User {
     phone?: string;
     customer_id?: string;
     account_type?: string;
+    status: string;
     is_subscribed?: boolean;
     subscription_expires_at?: string;
     email_verified_at?: string;
     phone_verified_at?: string;
     factory?: Factory | null;
+}
+
+export interface PaginationLink {
+    url: string | null;
+    label: string;
+    active: boolean;
+}
+
+export interface PaginatedData<T> {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    from: number | null;
+    to: number | null;
+    total: number;
+    prev_page_url: string | null;
+    next_page_url: string | null;
+    links: PaginationLink[];
 }
 
 export type PageProps<

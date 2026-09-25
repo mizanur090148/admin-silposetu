@@ -122,7 +122,12 @@ class FactoryController extends Controller
             });
         }
 
-        $factories = $query->latest()->paginate(15)->withQueryString();
+        $perPage = (int) $request->input('per_page', 15);
+        if ($perPage < 5 || $perPage > 100) {
+            $perPage = 15;
+        }
+
+        $factories = $query->latest()->paginate($perPage)->withQueryString();
 
         $counts = [
             'pending' => User::where('account_type', 'factory')->where('status', 'pending')->count(),
@@ -143,6 +148,7 @@ class FactoryController extends Controller
                 'tab' => $tab,
                 'search' => $search,
                 'district' => $district,
+                'per_page' => $perPage,
             ],
             'districts' => $districts,
         ]);

@@ -41,7 +41,12 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->latest()->paginate(20)->withQueryString();
+        $perPage = (int) $request->input('per_page', 20);
+        if ($perPage < 5 || $perPage > 100) {
+            $perPage = 20;
+        }
+
+        $users = $query->latest()->paginate($perPage)->withQueryString();
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
@@ -49,6 +54,7 @@ class UserController extends Controller
                 'role' => $role,
                 'status' => $status,
                 'search' => $search,
+                'per_page' => $perPage,
             ],
             'stats' => [
                 'total' => User::count(),

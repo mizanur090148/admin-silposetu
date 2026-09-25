@@ -18,17 +18,11 @@ import {
     Sparkles,
     FileSpreadsheet
 } from 'lucide-react';
-import { MachineType } from '@/types';
+import Pagination from '@/Components/Pagination';
+import { MachineType, PaginatedData } from '@/types';
 
 interface Props {
-    machineTypes: {
-        data: MachineType[];
-        current_page: number;
-        last_page: number;
-        total: number;
-        prev_page_url: string | null;
-        next_page_url: string | null;
-    };
+    machineTypes: PaginatedData<MachineType>;
     categories: Record<string, string>;
     defaultUnits: string[];
     categoryCounts: Record<string, number>;
@@ -36,6 +30,7 @@ interface Props {
     filters: {
         category: string;
         search: string;
+        per_page?: number;
     };
 }
 
@@ -73,6 +68,7 @@ export default function Index({
         router.get(route('admin.machine-types.index'), {
             ...filters,
             search,
+            page: 1,
         }, { preserveState: true });
     };
 
@@ -80,6 +76,15 @@ export default function Index({
         router.get(route('admin.machine-types.index'), {
             ...filters,
             category: cat,
+            page: 1,
+        }, { preserveState: true });
+    };
+
+    const handlePerPageChange = (perPage: number) => {
+        router.get(route('admin.machine-types.index'), {
+            ...filters,
+            per_page: perPage,
+            page: 1,
         }, { preserveState: true });
     };
 
@@ -274,6 +279,17 @@ export default function Index({
                             </table>
                         </div>
                     )}
+
+                    {/* Server-Side Pagination */}
+                    <Pagination
+                        links={machineTypes.links}
+                        from={machineTypes.from}
+                        to={machineTypes.to}
+                        total={machineTypes.total}
+                        perPage={filters.per_page || machineTypes.per_page}
+                        onPerPageChange={handlePerPageChange}
+                        itemName="machine types"
+                    />
                 </div>
 
                 {/* MODAL: ADD MACHINE TYPE */}
