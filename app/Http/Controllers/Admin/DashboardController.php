@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Factory;
 use App\Models\Quotation;
 use App\Models\SubcontractPost;
 use App\Models\User;

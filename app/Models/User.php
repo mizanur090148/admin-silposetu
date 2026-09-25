@@ -98,4 +98,19 @@ class User extends Authenticatable
     {
         return (bool) $this->is_subscribed;
     }
+
+    /**
+     * Generate next unique Customer ID (e.g. S20260101, B20260101).
+     */
+    public static function generateUniqueCustomerId(string $prefix = 'S'): string
+    {
+        $year = date('Y');
+        $count = static::count() + 101;
+        do {
+            $customerId = $prefix.$year.str_pad((string) $count, 4, '0', STR_PAD_LEFT);
+            $count++;
+        } while (static::where('customer_id', $customerId)->exists());
+
+        return $customerId;
+    }
 }

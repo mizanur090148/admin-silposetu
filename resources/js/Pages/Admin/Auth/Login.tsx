@@ -1,8 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
-import { Shield, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
+import { Shield, Lock, Mail, ArrowRight, AlertCircle, Sun, Moon } from 'lucide-react';
 
 export default function Login() {
+    const [darkMode, setDarkMode] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const isDark = document.documentElement.classList.contains('dark') ||
+                (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches) ||
+                localStorage.theme === 'dark';
+            setDarkMode(isDark);
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        if (darkMode) {
+            document.documentElement.classList.remove('dark');
+            localStorage.setItem('theme', 'light');
+            setDarkMode(false);
+        } else {
+            document.documentElement.classList.add('dark');
+            localStorage.setItem('theme', 'dark');
+            setDarkMode(true);
+        }
+    };
+
     const { data, setData, post, processing, errors } = useForm({
         email: '',
         password: '',
@@ -15,8 +43,20 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4 antialiased selection:bg-blue-600 selection:text-white">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-center items-center p-4 antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200 relative">
             <Head title="Admin Login - Shilposetu" />
+
+            {/* Floating Theme Switcher */}
+            <div className="absolute top-4 right-4">
+                <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white shadow-sm transition"
+                    title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                >
+                    {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+                </button>
+            </div>
 
             <div className="w-full max-w-md space-y-6">
                 {/* Logo & Header */}
@@ -24,34 +64,34 @@ export default function Login() {
                     <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 items-center justify-center text-white shadow-xl shadow-blue-500/25 mb-1">
                         <Shield className="w-7 h-7" />
                     </div>
-                    <h1 className="text-2xl font-black tracking-tight text-white">Shilposetu Admin Portal</h1>
-                    <p className="text-xs text-slate-400">
+                    <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">Shilposetu Admin Portal</h1>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                         Authorized administrative access only
                     </p>
                 </div>
 
                 {/* Login Form Card */}
-                <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur">
+                <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-xl dark:shadow-2xl backdrop-blur transition-colors">
                     <form onSubmit={submit} className="space-y-4">
                         {/* Email */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                                 Admin Email
                             </label>
                             <div className="relative">
-                                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <Mail className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="email"
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
                                     placeholder="admin@silposetu.com"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-800/70 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                                     required
                                     autoFocus
                                 />
                             </div>
                             {errors.email && (
-                                <p className="mt-1 text-xs text-rose-400 flex items-center gap-1">
+                                <p className="mt-1 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1">
                                     <AlertCircle className="w-3.5 h-3.5" />
                                     {errors.email}
                                 </p>
@@ -60,22 +100,22 @@ export default function Login() {
 
                         {/* Password */}
                         <div>
-                            <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                                 Password
                             </label>
                             <div className="relative">
-                                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                <Lock className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="password"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
                                     placeholder="••••••••"
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-800/70 border border-slate-700/80 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/80 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
                                     required
                                 />
                             </div>
                             {errors.password && (
-                                <p className="mt-1 text-xs text-rose-400 flex items-center gap-1">
+                                <p className="mt-1 text-xs text-rose-600 dark:text-rose-400 flex items-center gap-1">
                                     <AlertCircle className="w-3.5 h-3.5" />
                                     {errors.password}
                                 </p>
@@ -84,12 +124,12 @@ export default function Login() {
 
                         {/* Remember Me */}
                         <div className="flex items-center justify-between pt-1">
-                            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400">
+                            <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 dark:text-slate-400">
                                 <input
                                     type="checkbox"
                                     checked={data.remember}
                                     onChange={(e) => setData('remember', e.target.checked)}
-                                    className="rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-0 focus:ring-offset-0"
+                                    className="rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-blue-600 focus:ring-0 focus:ring-offset-0"
                                 />
                                 <span>Remember me</span>
                             </label>
@@ -99,7 +139,7 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25 transition disabled:opacity-50 cursor-pointer"
+                            className="w-full mt-2 inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/25 transition disabled:opacity-50 cursor-pointer"
                         >
                             <span>Sign In</span>
                             <ArrowRight className="w-4 h-4" />
@@ -107,7 +147,7 @@ export default function Login() {
                     </form>
                 </div>
 
-                <div className="text-center text-[11px] text-slate-500">
+                <div className="text-center text-[11px] text-slate-400 dark:text-slate-500">
                     Shilposetu Industrial Platform © {new Date().getFullYear()} — All rights reserved.
                 </div>
             </div>
