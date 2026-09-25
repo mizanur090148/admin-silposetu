@@ -54,7 +54,7 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
 
                 {stats.pending_factories > 0 ? (
                     <Link
-                        href={route('admin.factories.index') + '?tab=pending'}
+                        href={route('admin.factories.pending')}
                         className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs shadow-lg shadow-amber-500/20 transition self-start sm:self-auto cursor-pointer"
                     >
                         <Clock className="w-4 h-4 animate-pulse" />
@@ -84,7 +84,7 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
                         <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Requires Action</span>
                     </div>
                     <Link
-                        href={route('admin.factories.index') + '?tab=pending'}
+                        href={route('admin.factories.pending')}
                         className="mt-3 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
                     >
                         View Pending List <ArrowUpRight className="w-3.5 h-3.5" />
@@ -160,7 +160,7 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
                         <h2 className="text-base font-bold text-slate-900 dark:text-white">Pending Factory Verifications</h2>
                     </div>
                     <Link
-                        href={route('admin.factories.index') + '?tab=pending'}
+                        href={route('admin.factories.pending')}
                         className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1"
                     >
                         View All ({stats.pending_factories}) <ArrowUpRight className="w-3.5 h-3.5" />
@@ -217,7 +217,7 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
                                         </td>
                                         <td className="py-3.5 px-3 text-right space-x-2">
                                             <Link
-                                                href={route('admin.factories.show', item.id)}
+                                                href={route('admin.factories.show', item.id) + '?from=pending'}
                                                 className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
                                             >
                                                 Review

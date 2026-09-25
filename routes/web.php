@@ -30,6 +30,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
     // Factory Review, Verification & Creation
+    Route::get('/pending-verifications', [FactoryController::class, 'pendingVerifications'])->name('admin.factories.pending');
     Route::get('/factories', [FactoryController::class, 'index'])->name('admin.factories.index');
     Route::get('/factories/create', [FactoryController::class, 'create'])->name('admin.factories.create');
     Route::post('/factories', [FactoryController::class, 'store'])->name('admin.factories.store');

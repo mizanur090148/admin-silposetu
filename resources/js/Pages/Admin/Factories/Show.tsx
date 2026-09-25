@@ -56,6 +56,8 @@ interface Props {
 
 export default function Show({ user }: Props) {
     const factory = user.factory;
+    const isFromPending = typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('from') === 'pending' || user.status === 'pending');
+    const backUrl = isFromPending ? route('admin.factories.pending') : route('admin.factories.index');
 
     const handleApprove = () => {
         if (confirm(`Are you sure you want to approve and activate the factory account '${factory?.business_name || user.name}'?`)) {
@@ -84,8 +86,9 @@ export default function Show({ user }: Props) {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <Link
-                            href={route('admin.factories.index')}
+                            href={backUrl}
                             className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition shadow-xs"
+                            title={isFromPending ? 'Back to Pending Verifications' : 'Back to Factories Directory'}
                         >
                             <ArrowLeft className="w-4 h-4" />
                         </Link>

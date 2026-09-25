@@ -80,11 +80,70 @@ class FactoryController extends Controller
     ];
 
     /**
+     * Display dedicated queue of pending factory verifications only.
+     */
+    public function pendingVerifications(Request $request): Response
+    {
+        $search = $request->input('search', '');
+        $district = $request->input('district', 'all');
+
+        $query = User::with('factory')
+            ->where('account_type', 'factory')
+            ->where('status', 'pending');
+
+        // Apply search
+        if (! empty($search)) {
+            $term = '%'.$search.'%';
+            $query->where(function ($q) use ($term) {
+                $q->where('name', 'like', $term)
+                    ->orWhere('email', 'like', $term)
+                    ->orWhere('phone', 'like', $term)
+                    ->orWhere('customer_id', 'like', $term)
+                    ->orWhereHas('factory', function ($fq) use ($term) {
+                        $fq->where('business_name', 'like', $term)
+                            ->orWhere('district', 'like', $term)
+                            ->orWhere('contact_person', 'like', $term);
+                    });
+            });
+        }
+
+        // Apply district filter
+        if (! empty($district) && $district !== 'all') {
+            $query->whereHas('factory', function ($fq) use ($district) {
+                $fq->where('district', $district);
+            });
+        }
+
+        $perPage = (int) $request->input('per_page', 15);
+        if ($perPage < 5 || $perPage > 100) {
+            $perPage = 15;
+        }
+
+        $factories = $query->latest()->paginate($perPage)->withQueryString();
+
+        $districts = Factory::select('district')
+            ->whereNotNull('district')
+            ->distinct()
+            ->pluck('district');
+
+        return Inertia::render('Admin/Factories/Pending', [
+            'factories' => $factories,
+            'filters' => [
+                'search' => $search,
+                'district' => $district,
+                'per_page' => $perPage,
+            ],
+            'districts' => $districts,
+            'pendingCount' => $factories->total(),
+        ]);
+    }
+
+    /**
      * Display list of factories filtered by tab & search query.
      */
     public function index(Request $request): Response
     {
-        $tab = $request->input('tab', 'pending');
+        $tab = $request->input('tab', 'all');
         $search = $request->input('search', '');
         $district = $request->input('district', 'all');
 

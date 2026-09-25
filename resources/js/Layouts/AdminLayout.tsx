@@ -65,17 +65,17 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
         },
         {
             name: 'Pending Verifications',
-            href: route('admin.factories.index') + '?tab=pending',
+            href: route('admin.factories.pending'),
             icon: Clock,
-            active: route().current('admin.factories.*') && (new URLSearchParams(window.location.search).get('tab') === 'pending' || !new URLSearchParams(window.location.search).get('tab')),
+            active: route().current('admin.factories.pending') || (route().current('admin.factories.show') && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('from') === 'pending'),
             badge: pendingCount > 0 ? pendingCount : null,
             badgeColor: 'bg-amber-500 text-slate-950 font-black',
         },
         {
             name: 'All Factories',
-            href: route('admin.factories.index') + '?tab=all',
+            href: route('admin.factories.index'),
             icon: Factory,
-            active: route().current('admin.factories.*') && new URLSearchParams(window.location.search).get('tab') !== 'pending',
+            active: route().current('admin.factories.*') && !route().current('admin.factories.pending') && (typeof window === 'undefined' || new URLSearchParams(window.location.search).get('from') !== 'pending'),
         },
         {
             name: 'Users',

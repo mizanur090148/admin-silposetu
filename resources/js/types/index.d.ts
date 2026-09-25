@@ -76,6 +76,8 @@ export interface User {
     subscription_expires_at?: string;
     email_verified_at?: string;
     phone_verified_at?: string;
+    created_at?: string;
+    updated_at?: string;
     factory?: Factory | null;
 }
 
