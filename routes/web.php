@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FactoryController;
+use App\Http\Controllers\Admin\KnittingTypeController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\UserController;
@@ -51,6 +52,13 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/machine-types/template', [MachineTypeController::class, 'downloadTemplate'])->name('admin.machine-types.template');
     Route::post('/machine-types/{id}/toggle', [MachineTypeController::class, 'toggle'])->name('admin.machine-types.toggle');
     Route::delete('/machine-types/{id}', [MachineTypeController::class, 'destroy'])->name('admin.machine-types.destroy');
+
+    // Knitting Types Master Data CRUD
+    Route::get('/knitting-types', [KnittingTypeController::class, 'index'])->name('admin.knitting-types.index');
+    Route::post('/knitting-types', [KnittingTypeController::class, 'store'])->name('admin.knitting-types.store');
+    Route::post('/knitting-types/{id}', [KnittingTypeController::class, 'update'])->name('admin.knitting-types.update');
+    Route::post('/knitting-types/{id}/toggle', [KnittingTypeController::class, 'toggle'])->name('admin.knitting-types.toggle');
+    Route::delete('/knitting-types/{id}', [KnittingTypeController::class, 'destroy'])->name('admin.knitting-types.destroy');
 
     // Users Management
     Route::get('/users', [UserController::class, 'index'])->name('admin.users.index');

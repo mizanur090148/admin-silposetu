@@ -745,11 +745,10 @@ export default function Edit({
                                             type="button"
                                             key={tab.key}
                                             onClick={() => setActiveDepartment(tab.key as any)}
-                                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
-                                                isActive
+                                            className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${isActive
                                                     ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/30'
                                                     : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
-                                            }`}
+                                                }`}
                                         >
                                             <Icon className="w-3.5 h-3.5" />
                                             <span>{tab.label}</span>
@@ -911,15 +910,13 @@ export default function Edit({
                                         <div
                                             key={cap}
                                             onClick={() => toggleCapability(cap)}
-                                            className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${
-                                                isSelected
+                                            className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs cursor-pointer transition select-none ${isSelected
                                                     ? 'bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300 font-semibold'
                                                     : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                            }`}
+                                                }`}
                                         >
-                                            <div className={`w-4 h-4 rounded flex items-center justify-center border ${
-                                                isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 dark:border-slate-700'
-                                            }`}>
+                                            <div className={`w-4 h-4 rounded flex items-center justify-center border ${isSelected ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 dark:border-slate-700'
+                                                }`}>
                                                 {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                                             </div>
                                             <span className="truncate">{cap}</span>

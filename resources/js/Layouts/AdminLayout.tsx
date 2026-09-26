@@ -14,6 +14,7 @@ import {
     Shield,
     ChevronRight,
     Cpu,
+    Layers,
     Sun,
     Moon,
 } from 'lucide-react';
@@ -88,6 +89,12 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             href: route('admin.machine-types.index'),
             icon: Cpu,
             active: route().current('admin.machine-types.*'),
+        },
+        {
+            name: 'Knitting Types',
+            href: route('admin.knitting-types.index'),
+            icon: Layers,
+            active: route().current('admin.knitting-types.*'),
         },
         {
             name: 'Subcontract Posts',

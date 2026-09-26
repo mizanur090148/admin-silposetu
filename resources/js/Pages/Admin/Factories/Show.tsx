@@ -51,6 +51,7 @@ interface Props {
             is_verified: boolean;
             rating: number;
             capabilities?: Record<string, any>;
+            knitting_types?: Array<{ id: number; name: string; slug: string }>;
         };
         subcontract_posts?: Array<any>;
     };
@@ -192,7 +193,10 @@ export default function Show({ user }: Props) {
                                 </div>
                                 <div>
                                     <span className="text-slate-500 dark:text-slate-400 block mb-1">Industry Type:</span>
-                                    <span className="font-semibold text-slate-900 dark:text-slate-200">{factory?.industry_type || 'Apparel & Garments'}</span>
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-500/20">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                        {factory?.industry_type || 'Knitting'}
+                                    </span>
                                 </div>
                                 <div>
                                     <span className="text-slate-500 dark:text-slate-400 block mb-1">Owner / Contact Person:</span>
@@ -206,6 +210,23 @@ export default function Show({ user }: Props) {
                                     <span className="text-slate-500 dark:text-slate-400 block mb-1">Full Address:</span>
                                     <span className="font-semibold text-slate-900 dark:text-slate-200">{factory?.address || 'Address not provided'}</span>
                                 </div>
+
+                                {factory?.knitting_types && factory.knitting_types.length > 0 && (
+                                    <div className="sm:col-span-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                        <span className="text-slate-500 dark:text-slate-400 block mb-2 font-medium">Specialized Knitting Types:</span>
+                                        <div className="flex flex-wrap gap-2">
+                                            {factory.knitting_types.map((kt) => (
+                                                <span
+                                                    key={kt.id}
+                                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-indigo-500/10 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-500/20"
+                                                >
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                                    <span>{kt.name}</span>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

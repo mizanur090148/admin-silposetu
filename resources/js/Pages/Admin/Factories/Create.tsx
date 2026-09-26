@@ -683,11 +683,10 @@ export default function Create({
                                             type="button"
                                             key={cap}
                                             onClick={() => toggleCapability(cap)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer border flex items-center gap-1.5 ${
-                                                isSelected
+                                            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer border flex items-center gap-1.5 ${isSelected
                                                     ? 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-600/20 dark:text-blue-300 dark:border-blue-500/40 shadow-xs'
                                                     : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 dark:bg-slate-950/60 dark:text-slate-400 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:text-slate-200'
-                                            }`}
+                                                }`}
                                         >
                                             {isSelected ? <Check className="w-3 h-3 text-blue-600 dark:text-blue-400" /> : <Plus className="w-3 h-3 text-slate-400" />}
                                             <span>{cap}</span>
@@ -741,11 +740,10 @@ export default function Create({
                                         type="button"
                                         key={tab.key}
                                         onClick={() => setActiveDepartment(tab.key as any)}
-                                        className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${
-                                            activeDepartment === tab.key
+                                        className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${activeDepartment === tab.key
                                                 ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20'
                                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800'
-                                        }`}
+                                            }`}
                                     >
                                         {tab.label}
                                     </button>

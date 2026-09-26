@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Factory;
+use App\Models\KnittingType;
 use App\Models\MachineType;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -224,8 +225,11 @@ class FactoryController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $knittingTypes = KnittingType::active()->orderBy('sort_order')->get();
+
         return Inertia::render('Admin/Factories/Create', [
             'machineTypes' => $machineTypes,
+            'knittingTypes' => $knittingTypes,
             'districts' => self::DISTRICTS,
             'industryTypes' => self::INDUSTRY_TYPES,
             'commonCapabilities' => self::COMMON_CAPABILITIES,
@@ -265,6 +269,8 @@ class FactoryController extends Controller
             'is_verified' => ['boolean'],
             'capabilities' => ['nullable', 'array'],
             'capabilities.*' => ['string', 'max:100'],
+            'knitting_types' => ['nullable', 'array'],
+            'knitting_types.*' => ['integer'],
             'production_capacities' => ['nullable', 'array'],
 
             // Legal & Documents
@@ -363,11 +369,11 @@ class FactoryController extends Controller
                 'email_verified_at' => now(),
             ]);
 
-            Factory::create([
+            $factory = Factory::create([
                 'user_id' => $user->id,
                 'business_name' => $validated['business_name'],
                 'logo' => $logoPath,
-                'industry_type' => $validated['industry_type'] ?? 'Apparel & Garments',
+                'industry_type' => 'Knitting',
                 'contact_person' => $validated['contact_person'] ?? $validated['name'],
                 'phone' => $validated['factory_phone'] ?? $validated['phone'],
                 'email' => $validated['factory_email'] ?? $validated['email'],
@@ -388,6 +394,10 @@ class FactoryController extends Controller
                 'bin_file' => $uploadedDocs['bin_file'] ?? null,
                 'nid_file' => $uploadedDocs['nid_file'] ?? null,
             ]);
+
+            if (! empty($validated['knitting_types'])) {
+                $factory->knittingTypes()->sync($validated['knitting_types']);
+            }
         });
 
         return redirect()->route('admin.factories.show', $user->id)
@@ -832,7 +842,7 @@ class FactoryController extends Controller
     public function show(int $id): Response
     {
         $user = User::with([
-            'factory',
+            'factory.knittingTypes',
             'subcontractPosts' => fn ($q) => $q->latest()->take(5),
             'quotations' => fn ($q) => $q->latest()->take(5),
         ])->findOrFail($id);
@@ -847,7 +857,7 @@ class FactoryController extends Controller
      */
     public function edit(int $id): Response
     {
-        $user = User::with('factory')->findOrFail($id);
+        $user = User::with('factory.knittingTypes')->findOrFail($id);
 
         $machineTypes = MachineType::query()
             ->active()
@@ -855,9 +865,12 @@ class FactoryController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        $knittingTypes = KnittingType::active()->orderBy('sort_order')->get();
+
         return Inertia::render('Admin/Factories/Edit', [
             'user' => $user,
             'machineTypes' => $machineTypes,
+            'knittingTypes' => $knittingTypes,
             'districts' => self::DISTRICTS,
             'industryTypes' => self::INDUSTRY_TYPES,
             'commonCapabilities' => self::COMMON_CAPABILITIES,
@@ -899,6 +912,8 @@ class FactoryController extends Controller
             'is_verified' => ['boolean'],
             'capabilities' => ['nullable', 'array'],
             'capabilities.*' => ['string', 'max:100'],
+            'knitting_types' => ['nullable', 'array'],
+            'knitting_types.*' => ['integer'],
             'production_capacities' => ['nullable', 'array'],
 
             // Legal & Documents
@@ -1001,7 +1016,7 @@ class FactoryController extends Controller
             $factoryData = [
                 'business_name' => $validated['business_name'],
                 'logo' => $logoPath,
-                'industry_type' => $validated['industry_type'] ?? 'Apparel & Garments',
+                'industry_type' => 'Knitting',
                 'contact_person' => $validated['contact_person'] ?? $validated['name'],
                 'phone' => $validated['factory_phone'] ?? $validated['phone'],
                 'email' => $validated['factory_email'] ?? $validated['email'],
@@ -1025,9 +1040,14 @@ class FactoryController extends Controller
 
             if ($factory) {
                 $factory->update($factoryData);
+                $targetFactory = $factory;
             } else {
                 $factoryData['user_id'] = $user->id;
-                Factory::create($factoryData);
+                $targetFactory = Factory::create($factoryData);
+            }
+
+            if ($targetFactory) {
+                $targetFactory->knittingTypes()->sync($validated['knitting_types'] ?? []);
             }
         });
 
