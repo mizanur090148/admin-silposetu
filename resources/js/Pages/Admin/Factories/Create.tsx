@@ -43,7 +43,6 @@ export default function Create({
     commonCapabilities,
     suggestedCustomerId
 }: Props) {
-    const [customTagInput, setCustomTagInput] = useState('');
     const [activeDepartment, setActiveDepartment] = useState<'sewing' | 'knitting' | 'yarn_dyeing' | 'fabric_dyeing' | 'print' | 'embroidery'>('sewing');
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -151,23 +150,6 @@ export default function Create({
         setLogoPreview(null);
         if (logoInputRef.current) {
             logoInputRef.current.value = '';
-        }
-    };
-
-    const toggleCapability = (cap: string) => {
-        if (data.capabilities.includes(cap)) {
-            setData('capabilities', data.capabilities.filter(c => c !== cap));
-        } else {
-            setData('capabilities', [...data.capabilities, cap]);
-        }
-    };
-
-    const addCustomCapability = (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimmed = customTagInput.trim();
-        if (trimmed && !data.capabilities.includes(trimmed)) {
-            setData('capabilities', [...data.capabilities, trimmed]);
-            setCustomTagInput('');
         }
     };
 
@@ -607,126 +589,19 @@ export default function Create({
                         </div>
                     </div>
 
-                    {/* SECTION 3: CAPACITY, MACHINERY & CAPABILITIES */}
-                    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-5 transition-colors">
+                    {/* SECTION 3: DEPARTMENT MACHINERY BREAKDOWN */}
+                    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-4 transition-colors">
                         <div className="flex items-center gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800/80">
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/20">
-                                <Layers className="w-4 h-4" />
+                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                                <Cpu className="w-4 h-4" />
                             </div>
                             <div>
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">3. Operational Capacities & Machinery ("Others Data")</h2>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Total lines, output metrics, department machinery breakdown, and production capabilities.</p>
+                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">3. Department Machinery Breakdown</h2>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Configure machine rows and line output by department</p>
                             </div>
                         </div>
 
-                        {/* Summary Metrics */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Total Lines</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={data.total_lines}
-                                    onChange={e => setData('total_lines', e.target.value)}
-                                    placeholder="e.g. 24"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Total Machines</label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={data.total_machines}
-                                    onChange={e => setData('total_machines', e.target.value)}
-                                    placeholder="e.g. 450"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Daily Capacity</label>
-                                <input
-                                    type="text"
-                                    value={data.daily_capacity}
-                                    onChange={e => setData('daily_capacity', e.target.value)}
-                                    placeholder="e.g. 15,000 Pcs/Day"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Factory Rating (1-5)</label>
-                                <input
-                                    type="number"
-                                    step="0.1"
-                                    min="1"
-                                    max="5"
-                                    value={data.rating}
-                                    onChange={e => setData('rating', e.target.value)}
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-amber-500 font-mono font-bold focus:outline-none focus:border-blue-500"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Capabilities Checklist */}
-                        <div>
-                            <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs mb-2">
-                                Production Capabilities & Compliance Badges
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                                {commonCapabilities.map(cap => {
-                                    const isSelected = data.capabilities.includes(cap);
-                                    return (
-                                        <button
-                                            type="button"
-                                            key={cap}
-                                            onClick={() => toggleCapability(cap)}
-                                            className={`px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer border flex items-center gap-1.5 ${isSelected
-                                                    ? 'bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-600/20 dark:text-blue-300 dark:border-blue-500/40 shadow-xs'
-                                                    : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 dark:bg-slate-950/60 dark:text-slate-400 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:text-slate-200'
-                                                }`}
-                                        >
-                                            {isSelected ? <Check className="w-3 h-3 text-blue-600 dark:text-blue-400" /> : <Plus className="w-3 h-3 text-slate-400" />}
-                                            <span>{cap}</span>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Add Custom Capability Tag */}
-                            <div className="mt-3 flex items-center gap-2 max-w-sm">
-                                <input
-                                    type="text"
-                                    value={customTagInput}
-                                    onChange={e => setCustomTagInput(e.target.value)}
-                                    placeholder="Add custom capability..."
-                                    className="flex-1 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={addCustomCapability}
-                                    className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 transition"
-                                >
-                                    Add
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Department Machinery Configurator */}
-                        <div className="pt-3 border-t border-slate-200 dark:border-slate-800/80 space-y-3">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                        <Cpu className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                                        <span>Department Machinery Breakdown</span>
-                                    </h3>
-                                    <p className="text-[10px] text-slate-500 dark:text-slate-400">Configure machine rows and line output by department</p>
-                                </div>
-                            </div>
-
-                            {/* Department Tabs */}
+                        {/* Department Tabs */}
                             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
                                 {[
                                     { key: 'sewing', label: 'Sewing Lines' },
@@ -741,8 +616,8 @@ export default function Create({
                                         key={tab.key}
                                         onClick={() => setActiveDepartment(tab.key as any)}
                                         className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${activeDepartment === tab.key
-                                                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20'
-                                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800'
+                                            ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20'
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800'
                                             }`}
                                     >
                                         {tab.label}
