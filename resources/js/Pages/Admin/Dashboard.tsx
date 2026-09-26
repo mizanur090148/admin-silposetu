@@ -177,18 +177,18 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
                         <table className="w-full text-left text-xs">
                             <thead className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                 <tr>
-                                    <th className="py-3 px-3">Factory & Owner</th>
-                                    <th className="py-3 px-3">Customer ID</th>
-                                    <th className="py-3 px-3">Location</th>
-                                    <th className="py-3 px-3">Status</th>
-                                    <th className="py-3 px-3 text-right">Actions</th>
+                                    <th className="py-2 px-3">Factory & Owner</th>
+                                    <th className="py-2 px-3">Customer ID</th>
+                                    <th className="py-2 px-3">Location</th>
+                                    <th className="py-2 px-3">Status</th>
+                                    <th className="py-2 px-3 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
                                 {recentPending.map((item) => (
                                     <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                                        <td className="py-3.5 px-3">
-                                            <div className="font-bold text-slate-900 dark:text-slate-100">
+                                        <td className="py-2 px-3">
+                                            <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
                                                 {item.factory?.business_name || item.name}
                                             </div>
                                             <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
@@ -200,31 +200,31 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="py-3.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
+                                        <td className="py-2 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
                                             {item.customer_id || `S${item.id}`}
                                         </td>
-                                        <td className="py-3.5 px-3 text-slate-700 dark:text-slate-300">
+                                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">
                                             <div className="flex items-center gap-1.5">
                                                 <MapPin className="w-3.5 h-3.5 text-slate-400" />
                                                 <span>{item.factory?.district || 'Gazipur'}</span>
                                             </div>
                                         </td>
-                                        <td className="py-3.5 px-3">
+                                        <td className="py-2 px-3">
                                             <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-md border border-amber-500/20">
                                                 <Clock className="w-3 h-3" />
                                                 Pending Review
                                             </span>
                                         </td>
-                                        <td className="py-3.5 px-3 text-right space-x-2">
+                                        <td className="py-2 px-3 text-right space-x-1.5">
                                             <Link
                                                 href={route('admin.factories.show', item.id) + '?from=pending'}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
                                             >
                                                 Review
                                             </Link>
                                             <button
                                                 onClick={() => handleQuickApprove(item.id, item.name)}
-                                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm transition cursor-pointer"
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm transition cursor-pointer"
                                             >
                                                 <CheckCircle className="w-3.5 h-3.5" />
                                                 Approve

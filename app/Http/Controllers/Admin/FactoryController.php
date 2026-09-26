@@ -251,6 +251,7 @@ class FactoryController extends Controller
 
             // Factory Details Fields
             'business_name' => ['required', 'string', 'max:255'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:4096'],
             'industry_type' => ['nullable', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'factory_phone' => ['nullable', 'string', 'max:50'],
@@ -318,6 +319,17 @@ class FactoryController extends Controller
             }
         }
 
+        // Upload Factory Logo if present
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('factory_logos', 'public');
+            $frontendStorage = base_path('../shilposetu/storage/app/public/factory_logos');
+            if (is_dir(dirname($frontendStorage))) {
+                @mkdir($frontendStorage, 0755, true);
+                @copy(storage_path('app/public/'.$logoPath), $frontendStorage.'/'.basename($logoPath));
+            }
+        }
+
         // Upload KYC Document files if present
         $uploadedDocs = [];
         foreach (['trade_license_file', 'tin_file', 'bin_file', 'nid_file'] as $docKey) {
@@ -333,6 +345,7 @@ class FactoryController extends Controller
             $totalLines,
             $totalMachines,
             $dailyCapacity,
+            $logoPath,
             $uploadedDocs,
             &$user
         ) {
@@ -353,6 +366,7 @@ class FactoryController extends Controller
             Factory::create([
                 'user_id' => $user->id,
                 'business_name' => $validated['business_name'],
+                'logo' => $logoPath,
                 'industry_type' => $validated['industry_type'] ?? 'Apparel & Garments',
                 'contact_person' => $validated['contact_person'] ?? $validated['name'],
                 'phone' => $validated['factory_phone'] ?? $validated['phone'],
@@ -826,6 +840,199 @@ class FactoryController extends Controller
         return Inertia::render('Admin/Factories/Show', [
             'user' => $user,
         ]);
+    }
+
+    /**
+     * Show the factory edit form.
+     */
+    public function edit(int $id): Response
+    {
+        $user = User::with('factory')->findOrFail($id);
+
+        $machineTypes = MachineType::query()
+            ->active()
+            ->orderBy('category')
+            ->orderBy('sort_order')
+            ->get();
+
+        return Inertia::render('Admin/Factories/Edit', [
+            'user' => $user,
+            'machineTypes' => $machineTypes,
+            'districts' => self::DISTRICTS,
+            'industryTypes' => self::INDUSTRY_TYPES,
+            'commonCapabilities' => self::COMMON_CAPABILITIES,
+        ]);
+    }
+
+    /**
+     * Update the specified factory and owner account.
+     */
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $user = User::with('factory')->findOrFail($id);
+        $factory = $user->factory;
+
+        $validated = $request->validate([
+            // Owner Account Fields
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:30', 'unique:users,phone,'.$user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'password' => ['nullable', 'string', 'min:6'],
+            'customer_id' => ['nullable', 'string', 'max:30', 'unique:users,customer_id,'.$user->id],
+            'nid_number' => ['nullable', 'string', 'max:50'],
+            'status' => ['required', 'in:active,pending,suspended'],
+            'is_subscribed' => ['boolean'],
+
+            // Factory Details Fields
+            'business_name' => ['required', 'string', 'max:255'],
+            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:4096'],
+            'industry_type' => ['nullable', 'string', 'max:255'],
+            'contact_person' => ['nullable', 'string', 'max:255'],
+            'factory_phone' => ['nullable', 'string', 'max:50'],
+            'factory_email' => ['nullable', 'email', 'max:255'],
+            'district' => ['nullable', 'string', 'max:100'],
+            'address' => ['nullable', 'string', 'max:1000'],
+            'total_lines' => ['nullable', 'integer', 'min:0'],
+            'total_machines' => ['nullable', 'integer', 'min:0'],
+            'daily_capacity' => ['nullable', 'string', 'max:100'],
+            'rating' => ['nullable', 'numeric', 'min:1', 'max:5'],
+            'is_verified' => ['boolean'],
+            'capabilities' => ['nullable', 'array'],
+            'capabilities.*' => ['string', 'max:100'],
+            'production_capacities' => ['nullable', 'array'],
+
+            // Legal & Documents
+            'trade_license_no' => ['nullable', 'string', 'max:100'],
+            'tin_no' => ['nullable', 'string', 'max:100'],
+            'bin_no' => ['nullable', 'string', 'max:100'],
+            'trade_license_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'tin_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'bin_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'nid_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+        ]);
+
+        // Auto-aggregate capacity metrics if production_capacities is supplied
+        $totalLines = isset($validated['total_lines']) ? (int) $validated['total_lines'] : ($factory?->total_lines ?? 0);
+        $totalMachines = isset($validated['total_machines']) ? (int) $validated['total_machines'] : ($factory?->total_machines ?? 0);
+        $dailyCapacity = $validated['daily_capacity'] ?? ($factory?->daily_capacity ?? null);
+
+        if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
+            $capacities = $validated['production_capacities'];
+
+            if (isset($capacities['sewing']) && is_array($capacities['sewing'])) {
+                $sewingLines = (int) ($capacities['sewing']['no_of_lines'] ?? 0);
+                if ($sewingLines > 0 && empty($validated['total_lines'])) {
+                    $totalLines = $sewingLines;
+                }
+                $sewingDaily = (float) ($capacities['sewing']['total_capacity_per_day'] ?? 0);
+                $sewingUnit = $capacities['sewing']['unit'] ?? 'Pcs';
+                if ($sewingDaily > 0 && empty($validated['daily_capacity'])) {
+                    $dailyCapacity = number_format($sewingDaily).' '.$sewingUnit.'/Day';
+                }
+            }
+
+            // Sum non-sewing machines
+            $calcMachines = 0;
+            foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
+                if (isset($capacities[$dept]) && is_array($capacities[$dept])) {
+                    foreach ($capacities[$dept] as $row) {
+                        $calcMachines += (int) ($row['no_of_machine'] ?? 0);
+                    }
+                }
+            }
+            if ($calcMachines > 0 && empty($validated['total_machines'])) {
+                $totalMachines = $calcMachines;
+            }
+        }
+
+        // Upload Factory Logo if present
+        $logoPath = $factory?->logo;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('factory_logos', 'public');
+            $frontendStorage = base_path('../shilposetu/storage/app/public/factory_logos');
+            if (is_dir(dirname($frontendStorage))) {
+                @mkdir($frontendStorage, 0755, true);
+                @copy(storage_path('app/public/'.$logoPath), $frontendStorage.'/'.basename($logoPath));
+            }
+        }
+
+        // Upload KYC Document files if present
+        $uploadedDocs = [
+            'trade_license_file' => $factory?->trade_license_file,
+            'tin_file' => $factory?->tin_file,
+            'bin_file' => $factory?->bin_file,
+            'nid_file' => $factory?->nid_file,
+        ];
+        foreach (['trade_license_file', 'tin_file', 'bin_file', 'nid_file'] as $docKey) {
+            if ($request->hasFile($docKey)) {
+                $uploadedDocs[$docKey] = $request->file($docKey)->store('factory_docs', 'public');
+            }
+        }
+
+        DB::transaction(function () use (
+            $user,
+            $factory,
+            $validated,
+            $totalLines,
+            $totalMachines,
+            $dailyCapacity,
+            $logoPath,
+            $uploadedDocs
+        ) {
+            $userUpdates = [
+                'name' => $validated['name'],
+                'phone' => $validated['phone'],
+                'email' => $validated['email'],
+                'status' => $validated['status'],
+                'nid_number' => $validated['nid_number'] ?? null,
+                'is_subscribed' => (bool) ($validated['is_subscribed'] ?? true),
+            ];
+
+            if (! empty($validated['customer_id'])) {
+                $userUpdates['customer_id'] = trim($validated['customer_id']);
+            }
+
+            if (! empty($validated['password'])) {
+                $userUpdates['password'] = Hash::make($validated['password']);
+            }
+
+            $user->update($userUpdates);
+
+            $factoryData = [
+                'business_name' => $validated['business_name'],
+                'logo' => $logoPath,
+                'industry_type' => $validated['industry_type'] ?? 'Apparel & Garments',
+                'contact_person' => $validated['contact_person'] ?? $validated['name'],
+                'phone' => $validated['factory_phone'] ?? $validated['phone'],
+                'email' => $validated['factory_email'] ?? $validated['email'],
+                'district' => $validated['district'] ?? 'Gazipur',
+                'address' => $validated['address'] ?? null,
+                'total_lines' => $totalLines,
+                'total_machines' => $totalMachines,
+                'daily_capacity' => $dailyCapacity,
+                'rating' => $validated['rating'] ?? 5.0,
+                'is_verified' => (bool) ($validated['is_verified'] ?? ($validated['status'] === 'active')),
+                'capabilities' => $validated['capabilities'] ?? [],
+                'production_capacities' => $validated['production_capacities'] ?? null,
+                'trade_license_no' => $validated['trade_license_no'] ?? null,
+                'trade_license_file' => $uploadedDocs['trade_license_file'],
+                'tin_no' => $validated['tin_no'] ?? null,
+                'tin_file' => $uploadedDocs['tin_file'],
+                'bin_no' => $validated['bin_no'] ?? null,
+                'bin_file' => $uploadedDocs['bin_file'],
+                'nid_file' => $uploadedDocs['nid_file'],
+            ];
+
+            if ($factory) {
+                $factory->update($factoryData);
+            } else {
+                $factoryData['user_id'] = $user->id;
+                Factory::create($factoryData);
+            }
+        });
+
+        return redirect()->route('admin.factories.show', $user->id)
+            ->with('success', "Factory '{$validated['business_name']}' updated successfully.");
     }
 
     /**

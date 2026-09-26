@@ -217,36 +217,36 @@ export default function Index({
                             <table className="w-full text-left text-xs">
                                 <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                     <tr>
-                                        <th className="py-3.5 px-4">Machine Name</th>
-                                        <th className="py-3.5 px-3">Category</th>
-                                        <th className="py-3.5 px-3">Standard Brand / Model</th>
-                                        <th className="py-3.5 px-3">Unit</th>
-                                        <th className="py-3.5 px-3">Sort Order</th>
-                                        <th className="py-3.5 px-3">Status</th>
-                                        <th className="py-3.5 px-4 text-right">Actions</th>
+                                        <th className="py-2.5 px-4">Machine Name</th>
+                                        <th className="py-2.5 px-3">Category</th>
+                                        <th className="py-2.5 px-3">Standard Brand / Model</th>
+                                        <th className="py-2.5 px-3">Unit</th>
+                                        <th className="py-2.5 px-3">Sort Order</th>
+                                        <th className="py-2.5 px-3">Status</th>
+                                        <th className="py-2.5 px-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                                     {machineTypes.data.map((item) => (
                                         <tr key={item.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                                            <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
+                                            <td className="py-2 px-4 font-bold text-slate-900 dark:text-white">
                                                 {item.name}
                                             </td>
-                                            <td className="py-3.5 px-3">
+                                            <td className="py-2 px-3">
                                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-slate-700/60">
                                                     {categories[item.category] || item.category}
                                                 </span>
                                             </td>
-                                            <td className="py-3.5 px-3 text-slate-600 dark:text-slate-300">
+                                            <td className="py-2 px-3 text-slate-600 dark:text-slate-300">
                                                 {item.brand_or_model || <span className="text-slate-400 dark:text-slate-600">N/A</span>}
                                             </td>
-                                            <td className="py-3.5 px-3 font-mono font-medium text-emerald-600 dark:text-emerald-400">
+                                            <td className="py-2 px-3 font-mono font-medium text-emerald-600 dark:text-emerald-400">
                                                 {item.default_unit}
                                             </td>
-                                            <td className="py-3.5 px-3 font-mono text-slate-500 dark:text-slate-400">
+                                            <td className="py-2 px-3 font-mono text-slate-500 dark:text-slate-400">
                                                 {item.sort_order}
                                             </td>
-                                            <td className="py-3.5 px-3">
+                                            <td className="py-2 px-3">
                                                 <button
                                                     type="button"
                                                     onClick={() => handleToggle(item.id)}
@@ -263,11 +263,11 @@ export default function Index({
                                                     )}
                                                 </button>
                                             </td>
-                                            <td className="py-3.5 px-4 text-right">
+                                            <td className="py-2 px-4 text-right">
                                                 <button
                                                     type="button"
                                                     onClick={() => handleDelete(item.id, item.name)}
-                                                    className="p-1.5 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition"
+                                                    className="p-1 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition"
                                                     title="Delete machine type"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />

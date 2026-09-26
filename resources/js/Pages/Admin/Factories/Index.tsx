@@ -15,6 +15,7 @@ import {
     Layers,
     Plus,
     Upload,
+    Edit3,
 } from 'lucide-react';
 import Pagination from '@/Components/Pagination';
 import { PaginatedData, User } from '@/types';
@@ -225,12 +226,12 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                             <table className="w-full text-left text-xs">
                                 <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                     <tr>
-                                        <th className="py-3.5 px-4">Factory & Owner</th>
-                                        <th className="py-3.5 px-3">Customer ID</th>
-                                        <th className="py-3.5 px-3">Contact</th>
-                                        <th className="py-3.5 px-3">Capacity</th>
-                                        <th className="py-3.5 px-3">Status</th>
-                                        <th className="py-3.5 px-4 text-right">Actions</th>
+                                        <th className="py-2.5 px-4">Factory & Owner</th>
+                                        <th className="py-2.5 px-3">Customer ID</th>
+                                        <th className="py-2.5 px-3">Contact</th>
+                                        <th className="py-2.5 px-3">Capacity</th>
+                                        <th className="py-2.5 px-3">Status</th>
+                                        <th className="py-2.5 px-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -238,41 +239,56 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                                         const factory = user.factory;
                                         return (
                                             <tr key={user.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                                                <td className="py-4 px-4">
-                                                    <div className="font-bold text-slate-900 dark:text-white text-sm">
-                                                        {factory?.business_name || user.name}
-                                                    </div>
-                                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                                                        <span>Owner: {user.name}</span>
-                                                        <span>•</span>
-                                                        <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                                                            <MapPin className="w-3 h-3 text-slate-400" />
-                                                            {factory?.district || 'N/A'}
-                                                        </span>
+                                                <td className="py-2.5 px-4">
+                                                    <div className="flex items-center gap-3">
+                                                        {factory?.logo ? (
+                                                            <img
+                                                                src={`/storage/${factory.logo}`}
+                                                                alt={factory.business_name}
+                                                                className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                                                {(factory?.business_name || user.name || 'F').charAt(0).toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <div className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+                                                                {factory?.business_name || user.name}
+                                                            </div>
+                                                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                                                                <span>Contact: {factory?.contact_person || user.name}</span>
+                                                                <span>•</span>
+                                                                <span className="flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                                                                    <MapPin className="w-3 h-3 text-slate-400" />
+                                                                    {factory?.district || 'N/A'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-3 font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">
+                                                <td className="py-2.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">
                                                     {user.customer_id || `S${user.id}`}
                                                 </td>
-                                                <td className="py-4 px-3 text-slate-700 dark:text-slate-300">
+                                                <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                                     <div className="flex items-center gap-1.5">
                                                         <Phone className="w-3.5 h-3.5 text-slate-400" />
                                                         <span>{user.phone || 'N/A'}</span>
                                                     </div>
-                                                    <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[150px] mt-0.5">
+                                                    <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-[150px]">
                                                         {user.email}
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-3 text-slate-700 dark:text-slate-300">
+                                                <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                                     <div className="flex items-center gap-1 font-semibold text-slate-900 dark:text-slate-200">
                                                         <Layers className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                                                         <span>{factory?.total_lines || 0} Lines</span>
                                                     </div>
-                                                    <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
                                                         Machines: {factory?.total_machines || 0}
                                                     </div>
                                                 </td>
-                                                <td className="py-4 px-3">
+                                                <td className="py-2.5 px-3">
                                                     {user.status === 'pending' && (
                                                         <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-0.5 rounded-full border border-amber-500/20">
                                                             <Clock className="w-3 h-3" />
@@ -292,19 +308,28 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="py-4 px-4 text-right space-x-1.5">
+                                                <td className="py-2.5 px-4 text-right space-x-1.5">
                                                     <Link
                                                         href={route('admin.factories.show', user.id)}
-                                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition"
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white transition"
                                                     >
                                                         <Eye className="w-3.5 h-3.5" />
                                                         <span>Review</span>
                                                     </Link>
 
+                                                    <Link
+                                                        href={route('admin.factories.edit', user.id)}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/40 transition"
+                                                        title="Edit Factory"
+                                                    >
+                                                        <Edit3 className="w-3.5 h-3.5" />
+                                                        <span>Edit</span>
+                                                    </Link>
+
                                                     {user.status === 'pending' && (
                                                         <button
                                                             onClick={() => handleApprove(user.id, user.name)}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm transition cursor-pointer"
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm transition cursor-pointer"
                                                         >
                                                             <Check className="w-3.5 h-3.5" />
                                                             <span>Approve</span>
@@ -314,7 +339,7 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                                                     {user.status === 'active' && (
                                                         <button
                                                             onClick={() => handleBlock(user.id, user.name)}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-600 hover:text-white border border-rose-500/20 transition cursor-pointer"
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-600 hover:text-white border border-rose-500/20 transition cursor-pointer"
                                                         >
                                                             <Ban className="w-3.5 h-3.5" />
                                                             <span>Block</span>
@@ -324,7 +349,7 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                                                     {user.status === 'suspended' && (
                                                         <button
                                                             onClick={() => handleUnblock(user.id, user.name)}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-500/10 hover:bg-blue-600 hover:text-white border border-blue-500/20 transition cursor-pointer"
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-500/10 hover:bg-blue-600 hover:text-white border border-blue-500/20 transition cursor-pointer"
                                                         >
                                                             <span>Unblock</span>
                                                         </button>

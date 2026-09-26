@@ -18,7 +18,8 @@ import {
     Hash,
     Calendar,
     ExternalLink,
-    AlertCircle
+    AlertCircle,
+    Edit3
 } from 'lucide-react';
 
 interface Props {
@@ -34,6 +35,7 @@ interface Props {
         factory?: {
             id: number;
             business_name: string;
+            logo?: string | null;
             industry_type: string;
             contact_person: string;
             phone: string;
@@ -87,11 +89,22 @@ export default function Show({ user }: Props) {
                     <div className="flex items-center gap-3">
                         <Link
                             href={backUrl}
-                            className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition shadow-xs"
+                            className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition shadow-xs shrink-0"
                             title={isFromPending ? 'Back to Pending Verifications' : 'Back to Factories Directory'}
                         >
                             <ArrowLeft className="w-4 h-4" />
                         </Link>
+                        {factory?.logo ? (
+                            <img
+                                src={`/storage/${factory.logo}`}
+                                alt={factory.business_name}
+                                className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0 shadow-xs"
+                            />
+                        ) : (
+                            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-black text-lg shrink-0">
+                                {(factory?.business_name || user.name || 'F').charAt(0).toUpperCase()}
+                            </div>
+                        )}
                         <div>
                             <div className="flex items-center gap-2">
                                 <h1 className="text-xl font-black text-slate-900 dark:text-white">{factory?.business_name || user.name}</h1>
@@ -122,6 +135,14 @@ export default function Show({ user }: Props) {
 
                     {/* Action Buttons Toolbar */}
                     <div className="flex items-center gap-2.5 self-start sm:self-auto">
+                        <Link
+                            href={route('admin.factories.edit', user.id)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 transition shadow-xs cursor-pointer"
+                        >
+                            <Edit3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                            <span>Edit Factory</span>
+                        </Link>
+
                         {user.status === 'pending' && (
                             <button
                                 onClick={handleApprove}

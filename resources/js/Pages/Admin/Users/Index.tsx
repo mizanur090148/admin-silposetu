@@ -167,27 +167,27 @@ export default function Index({ users, filters, stats }: Props) {
                         <table className="w-full text-left text-xs">
                             <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                 <tr>
-                                    <th className="py-3.5 px-4">User & ID</th>
-                                    <th className="py-3.5 px-3">Contact</th>
-                                    <th className="py-3.5 px-3">Role</th>
-                                    <th className="py-3.5 px-3">Status</th>
-                                    <th className="py-3.5 px-4 text-right">Action</th>
+                                    <th className="py-2.5 px-4">User & ID</th>
+                                    <th className="py-2.5 px-3">Contact</th>
+                                    <th className="py-2.5 px-3">Role</th>
+                                    <th className="py-2.5 px-3">Status</th>
+                                    <th className="py-2.5 px-4 text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                                 {users.data.map((user) => (
                                     <tr key={user.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                                        <td className="py-3.5 px-4">
-                                            <div className="font-bold text-slate-900 dark:text-white text-sm">{user.name}</div>
+                                        <td className="py-2.5 px-4">
+                                            <div className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">{user.name}</div>
                                             <div className="font-mono text-[11px] text-blue-600 dark:text-blue-400 font-semibold">
                                                 {user.customer_id || `S${user.id}`}
                                             </div>
                                         </td>
-                                        <td className="py-3.5 px-3 text-slate-700 dark:text-slate-300">
+                                        <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                             <div>{user.phone || 'No phone'}</div>
                                             <div className="text-[11px] text-slate-400 dark:text-slate-500">{user.email}</div>
                                         </td>
-                                        <td className="py-3.5 px-3">
+                                        <td className="py-2.5 px-3">
                                             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                                                 user.account_type === 'admin'
                                                     ? 'bg-purple-500/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border border-purple-500/20 dark:border-purple-500/30'
@@ -198,7 +198,7 @@ export default function Index({ users, filters, stats }: Props) {
                                                 {user.account_type}
                                             </span>
                                         </td>
-                                        <td className="py-3.5 px-3">
+                                        <td className="py-2.5 px-3">
                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                                 user.status === 'active'
                                                     ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20'
@@ -209,11 +209,11 @@ export default function Index({ users, filters, stats }: Props) {
                                                 {user.status}
                                             </span>
                                         </td>
-                                        <td className="py-3.5 px-4 text-right">
+                                        <td className="py-2.5 px-4 text-right">
                                             {user.account_type !== 'admin' && (
                                                 <button
                                                     onClick={() => handleToggleStatus(user.id, user.name, user.status)}
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                                                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
                                                         user.status === 'active'
                                                             ? 'bg-rose-500/10 text-rose-600 dark:text-rose-300 hover:bg-rose-600 hover:text-white border border-rose-500/20'
                                                             : 'bg-emerald-600 text-white hover:bg-emerald-500'

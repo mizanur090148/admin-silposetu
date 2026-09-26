@@ -38,6 +38,8 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/factories/import', [FactoryController::class, 'importStore'])->name('admin.factories.import.store');
     Route::get('/factories/template', [FactoryController::class, 'downloadTemplate'])->name('admin.factories.template');
     Route::get('/factories/{id}', [FactoryController::class, 'show'])->name('admin.factories.show');
+    Route::get('/factories/{id}/edit', [FactoryController::class, 'edit'])->name('admin.factories.edit');
+    Route::post('/factories/{id}', [FactoryController::class, 'update'])->name('admin.factories.update');
     Route::post('/factories/{id}/approve', [FactoryController::class, 'approve'])->name('admin.factories.approve');
     Route::post('/factories/{id}/block', [FactoryController::class, 'block'])->name('admin.factories.block');
     Route::post('/factories/{id}/unblock', [FactoryController::class, 'unblock'])->name('admin.factories.unblock');

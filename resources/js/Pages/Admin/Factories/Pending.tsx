@@ -16,6 +16,7 @@ import {
     AlertCircle,
     X,
     Filter,
+    Edit3,
 } from 'lucide-react';
 import Pagination from '@/Components/Pagination';
 import { PaginatedData, User } from '@/types';
@@ -200,13 +201,13 @@ export default function Pending({ factories, filters, districts, pendingCount }:
                             <table className="w-full text-left text-xs">
                                 <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                     <tr>
-                                        <th className="py-3.5 px-4">Factory & Contact</th>
-                                        <th className="py-3.5 px-3">Customer ID</th>
-                                        <th className="py-3.5 px-3">Location & District</th>
-                                        <th className="py-3.5 px-3">Production Capacity</th>
-                                        <th className="py-3.5 px-3">Submitted Date</th>
-                                        <th className="py-3.5 px-3">Status</th>
-                                        <th className="py-3.5 px-4 text-right">Verification Actions</th>
+                                        <th className="py-2.5 px-4">Factory & Contact</th>
+                                        <th className="py-2.5 px-3">Customer ID</th>
+                                        <th className="py-2.5 px-3">Location & District</th>
+                                        <th className="py-2.5 px-3">Production Capacity</th>
+                                        <th className="py-2.5 px-3">Submitted Date</th>
+                                        <th className="py-2.5 px-3">Status</th>
+                                        <th className="py-2.5 px-4 text-right">Verification Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
@@ -218,58 +219,72 @@ export default function Pending({ factories, filters, districts, pendingCount }:
                                                 className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition group"
                                             >
                                                 {/* Factory & Contact */}
-                                                <td className="py-3.5 px-4">
-                                                    <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                                                        <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                                                        <span>{factory?.business_name || user.name}</span>
-                                                    </div>
-                                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2 mt-1">
-                                                        <span className="font-medium text-slate-700 dark:text-slate-300">
-                                                            Owner: {user.name}
-                                                        </span>
-                                                        <span>•</span>
-                                                        <span className="flex items-center gap-1">
-                                                            <Phone className="w-3 h-3 text-slate-400" />
-                                                            {user.phone}
-                                                        </span>
-                                                        <span>•</span>
-                                                        <span className="flex items-center gap-1">
-                                                            <Mail className="w-3 h-3 text-slate-400" />
-                                                            {user.email}
-                                                        </span>
+                                                <td className="py-2.5 px-4">
+                                                    <div className="flex items-center gap-3">
+                                                        {factory?.logo ? (
+                                                            <img
+                                                                src={`/storage/${factory.logo}`}
+                                                                alt={factory.business_name}
+                                                                className="w-8 h-8 rounded-lg object-cover border border-slate-200 dark:border-slate-700 shrink-0"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs shrink-0">
+                                                                {(factory?.business_name || user.name || 'F').charAt(0).toUpperCase()}
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <div className="font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5 text-xs sm:text-sm">
+                                                                <span>{factory?.business_name || user.name}</span>
+                                                            </div>
+                                                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-2 mt-0.5">
+                                                                <span className="font-medium text-slate-700 dark:text-slate-300">
+                                                                    Contact: {factory?.contact_person || user.name}
+                                                                </span>
+                                                                <span>•</span>
+                                                                <span className="flex items-center gap-1">
+                                                                    <Phone className="w-3 h-3 text-slate-400" />
+                                                                    {user.phone}
+                                                                </span>
+                                                                <span>•</span>
+                                                                <span className="flex items-center gap-1">
+                                                                    <Mail className="w-3 h-3 text-slate-400" />
+                                                                    {user.email}
+                                                                </span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
 
                                                 {/* Customer ID */}
-                                                <td className="py-3.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
+                                                <td className="py-2.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
                                                     {user.customer_id || `S${user.id}`}
                                                 </td>
 
                                                 {/* District & Location */}
-                                                <td className="py-3.5 px-3 text-slate-700 dark:text-slate-300">
+                                                <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                                     <div className="flex items-center gap-1.5 font-medium">
                                                         <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                                         <span>{factory?.district || 'Not specified'}</span>
                                                     </div>
                                                     {factory?.address && (
-                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px] mt-0.5">
+                                                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
                                                             {factory.address}
                                                         </p>
                                                     )}
                                                 </td>
 
                                                 {/* Production Capacity */}
-                                                <td className="py-3.5 px-3 text-slate-700 dark:text-slate-300">
+                                                <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                                     <div className="font-medium text-slate-900 dark:text-slate-100">
                                                         {factory?.daily_capacity || factory?.industry_type || 'General Apparel'}
                                                     </div>
-                                                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                                                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
                                                         {factory?.total_lines ?? 0} Lines • {factory?.total_machines ?? 0} Machines
                                                     </div>
                                                 </td>
 
                                                 {/* Submitted Date */}
-                                                <td className="py-3.5 px-3 text-slate-600 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
+                                                <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 text-[11px] font-mono whitespace-nowrap">
                                                     {user.created_at ? new Date(user.created_at).toLocaleDateString(undefined, {
                                                         year: 'numeric',
                                                         month: 'short',
@@ -278,28 +293,37 @@ export default function Pending({ factories, filters, districts, pendingCount }:
                                                 </td>
 
                                                 {/* Status Badge */}
-                                                <td className="py-3.5 px-3 whitespace-nowrap">
-                                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/25">
+                                                <td className="py-2.5 px-3 whitespace-nowrap">
+                                                    <span className="inline-flex items-center gap-1.5 text-[11px] font-bold bg-amber-500/15 text-amber-800 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/25">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                                                         Pending Review
                                                     </span>
                                                 </td>
 
                                                 {/* Verification Actions */}
-                                                <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                                <td className="py-2.5 px-4 text-right whitespace-nowrap">
                                                     <div className="inline-flex items-center gap-1.5">
                                                         <Link
                                                             href={route('admin.factories.show', user.id) + '?from=pending'}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800/60 transition"
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
                                                             title="Inspect Legal KYC & Factory Profile"
                                                         >
                                                             <Eye className="w-3.5 h-3.5" />
                                                             <span>Review</span>
                                                         </Link>
 
+                                                        <Link
+                                                            href={route('admin.factories.edit', user.id)}
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800/60 transition"
+                                                            title="Edit Factory Information"
+                                                        >
+                                                            <Edit3 className="w-3.5 h-3.5" />
+                                                            <span>Edit</span>
+                                                        </Link>
+
                                                         <button
                                                             onClick={() => handleApprove(user.id, factory?.business_name || user.name)}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800/60 transition cursor-pointer"
                                                             title="Approve & Activate Factory"
                                                         >
                                                             <Check className="w-3.5 h-3.5" />
@@ -308,7 +332,7 @@ export default function Pending({ factories, filters, districts, pendingCount }:
 
                                                         <button
                                                             onClick={() => handleReject(user.id, factory?.business_name || user.name)}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/60 transition cursor-pointer"
+                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-900/30 hover:bg-rose-100 dark:hover:bg-rose-900/50 border border-rose-200 dark:border-rose-800/60 transition cursor-pointer"
                                                             title="Reject / Block Application"
                                                         >
                                                             <Ban className="w-3.5 h-3.5" />

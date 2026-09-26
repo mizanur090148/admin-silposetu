@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
@@ -22,7 +22,9 @@ import {
     AlertCircle,
     Info,
     HelpCircle,
-    BadgeCheck
+    BadgeCheck,
+    X,
+    Image as ImageIcon
 } from 'lucide-react';
 import { MachineType, NonSewingMachineRow, SewingCapacity } from '@/types';
 
@@ -43,6 +45,8 @@ export default function Create({
 }: Props) {
     const [customTagInput, setCustomTagInput] = useState('');
     const [activeDepartment, setActiveDepartment] = useState<'sewing' | 'knitting' | 'yarn_dyeing' | 'fabric_dyeing' | 'print' | 'embroidery'>('sewing');
+    const logoInputRef = useRef<HTMLInputElement>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
     const { data, setData, post, processing, errors, reset } = useForm<{
         name: string;
@@ -54,6 +58,7 @@ export default function Create({
         status: string;
         is_subscribed: boolean;
         business_name: string;
+        logo: File | null;
         industry_type: string;
         contact_person: string;
         factory_phone: string;
@@ -91,6 +96,7 @@ export default function Create({
         status: 'active',
         is_subscribed: true,
         business_name: '',
+        logo: null,
         industry_type: industryTypes[0] || 'Apparel & Garments',
         contact_person: '',
         factory_phone: '',
@@ -124,6 +130,29 @@ export default function Create({
         bin_file: null,
         nid_file: null,
     });
+
+    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files ? e.target.files[0] : null;
+        if (file) {
+            setData('logo', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        } else {
+            setData('logo', null);
+            setLogoPreview(null);
+        }
+    };
+
+    const removeLogo = () => {
+        setData('logo', null);
+        setLogoPreview(null);
+        if (logoInputRef.current) {
+            logoInputRef.current.value = '';
+        }
+    };
 
     const toggleCapability = (cap: string) => {
         if (data.capabilities.includes(cap)) {
@@ -285,7 +314,7 @@ export default function Create({
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                             <div>
                                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Owner Full Name <span className="text-rose-500">*</span>
+                                    Contact Person / Owner Name <span className="text-rose-500">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -300,7 +329,7 @@ export default function Create({
 
                             <div>
                                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Login Mobile / Phone <span className="text-rose-500">*</span>
+                                    Mobile / Phone <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -318,7 +347,7 @@ export default function Create({
 
                             <div>
                                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Login Email <span className="text-rose-500">*</span>
+                                    Email Address <span className="text-rose-500">*</span>
                                 </label>
                                 <div className="relative">
                                     <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -418,6 +447,74 @@ export default function Create({
                                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">2. Factory Identity & Location</h2>
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Business registration name, manufacturing classification, and address.</p>
                             </div>
+                        </div>
+
+                        {/* Factory Logo Upload (Optional / Not Mandatory) */}
+                        <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                                    Factory Logo <span className="text-slate-400 font-normal text-[11px]">(Optional - Not Mandatory)</span>
+                                </label>
+                                {logoPreview && (
+                                    <button
+                                        type="button"
+                                        onClick={removeLogo}
+                                        className="text-rose-500 hover:text-rose-600 text-xs font-semibold flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                        <span>Remove</span>
+                                    </button>
+                                )}
+                            </div>
+
+                            {!logoPreview ? (
+                                <div
+                                    onClick={() => logoInputRef.current?.click()}
+                                    className="border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-white dark:bg-slate-900 rounded-xl p-3.5 text-center cursor-pointer transition flex items-center justify-center gap-3.5 group"
+                                >
+                                    <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition shrink-0">
+                                        <Upload className="w-5 h-5" />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                                            Click to upload factory brand logo
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">PNG, JPG, WEBP, SVG up to 4MB • Not Mandatory</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-3 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
+                                    <img
+                                        src={logoPreview}
+                                        alt="Factory logo preview"
+                                        className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 bg-white shrink-0"
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs font-medium text-slate-900 dark:text-white truncate">
+                                            {data.logo?.name || 'Selected Logo'}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">
+                                            {data.logo ? `${(data.logo.size / 1024).toFixed(1)} KB` : ''}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => logoInputRef.current?.click()}
+                                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold px-2.5 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950 transition cursor-pointer"
+                                    >
+                                        Change
+                                    </button>
+                                </div>
+                            )}
+
+                            <input
+                                ref={logoInputRef}
+                                type="file"
+                                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                                onChange={handleLogoChange}
+                                className="hidden"
+                            />
+                            {errors.logo && <p className="text-rose-500 text-[10px] mt-1">{errors.logo}</p>}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">

@@ -82,43 +82,43 @@ export default function Index({ posts, filters, totalPosts }: Props) {
                             <table className="w-full text-left text-xs">
                                 <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                     <tr>
-                                        <th className="py-3.5 px-4">Order Title</th>
-                                        <th className="py-3.5 px-3">Category</th>
-                                        <th className="py-3.5 px-3">Factory</th>
-                                        <th className="py-3.5 px-3">Target Quantity</th>
-                                        <th className="py-3.5 px-3">Date</th>
-                                        <th className="py-3.5 px-4 text-right">Action</th>
+                                        <th className="py-2.5 px-4">Order Title</th>
+                                        <th className="py-2.5 px-3">Category</th>
+                                        <th className="py-2.5 px-3">Factory</th>
+                                        <th className="py-2.5 px-3">Target Quantity</th>
+                                        <th className="py-2.5 px-3">Date</th>
+                                        <th className="py-2.5 px-4 text-right">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                                     {posts.data.map((post) => (
                                         <tr key={post.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                                            <td className="py-3.5 px-4 max-w-xs">
+                                            <td className="py-2 px-4 max-w-xs">
                                                 <div className="font-bold text-slate-900 dark:text-white text-xs line-clamp-1">{post.title}</div>
                                                 <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                                                     <MapPin className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                                                     <span>{post.district}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-3.5 px-3">
+                                            <td className="py-2 px-3">
                                                 <span className="text-[10px] font-bold uppercase bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/20 dark:border-blue-500/30">
                                                     {post.category}
                                                 </span>
                                             </td>
-                                            <td className="py-3.5 px-3 text-slate-700 dark:text-slate-300">
+                                            <td className="py-2 px-3 text-slate-700 dark:text-slate-300">
                                                 <div className="font-semibold">{post.factory?.business_name || post.user?.name}</div>
                                                 <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{post.user?.customer_id}</div>
                                             </td>
-                                            <td className="py-3.5 px-3 font-semibold text-slate-800 dark:text-slate-200">
+                                            <td className="py-2 px-3 font-semibold text-slate-800 dark:text-slate-200">
                                                 {post.target_quantity?.toLocaleString()} {post.unit}
                                             </td>
-                                            <td className="py-3.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
+                                            <td className="py-2 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
                                                 {new Date(post.created_at).toLocaleDateString()}
                                             </td>
-                                            <td className="py-3.5 px-4 text-right">
+                                            <td className="py-2 px-4 text-right">
                                                 <button
                                                     onClick={() => handleDelete(post.id, post.title)}
-                                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-600 hover:text-white border border-rose-500/20 transition cursor-pointer"
+                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-600 hover:text-white border border-rose-500/20 transition cursor-pointer"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                     <span>Delete</span>
