@@ -282,10 +282,10 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                                                 <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                                     <div className="flex items-center gap-1 font-semibold text-slate-900 dark:text-slate-200">
                                                         <Layers className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
-                                                        <span>{factory?.total_lines || 0} Lines</span>
+                                                        <span>{factory?.total_machines || 0} Machines</span>
                                                     </div>
                                                     <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                                                        Machines: {factory?.total_machines || 0}
+                                                        {factory?.daily_capacity || 'N/A'}
                                                     </div>
                                                 </td>
                                                 <td className="py-2.5 px-3">

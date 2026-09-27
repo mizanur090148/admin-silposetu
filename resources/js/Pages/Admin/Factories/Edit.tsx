@@ -49,12 +49,9 @@ interface Props {
             email?: string;
             district?: string;
             address?: string;
-            total_lines?: number;
             total_machines?: number;
             daily_capacity?: string;
-            rating?: number;
             is_verified?: boolean;
-            capabilities?: string[];
             knitting_types?: Array<{ id: number; name: string; slug: string }>;
             machines?: FactoryMachine[];
             production_capacities?: {
@@ -78,7 +75,6 @@ interface Props {
     knittingTypes?: KnittingType[];
     districts: string[];
     industryTypes: string[];
-    commonCapabilities: string[];
 }
 
 export default function Edit({
@@ -87,7 +83,6 @@ export default function Edit({
     knittingTypes = [],
     districts,
     industryTypes,
-    commonCapabilities,
 }: Props) {
     const factory = user.factory;
     const logoInputRef = useRef<HTMLInputElement>(null);
@@ -113,12 +108,9 @@ export default function Edit({
         factory_email: string;
         district: string;
         address: string;
-        total_lines: number | string;
         total_machines: number | string;
         daily_capacity: string;
-        rating: number | string;
         is_verified: boolean;
-        capabilities: string[];
         knitting_types: number[];
         production_capacities: {
             sewing?: SewingCapacity;
@@ -153,12 +145,9 @@ export default function Edit({
         factory_email: factory?.email || '',
         district: factory?.district || districts[0] || 'Gazipur',
         address: factory?.address || '',
-        total_lines: factory?.total_lines ?? '',
         total_machines: factory?.total_machines ?? '',
         daily_capacity: factory?.daily_capacity || '',
-        rating: factory?.rating ?? 5.0,
         is_verified: factory?.is_verified ?? true,
-        capabilities: factory?.capabilities || ['Sewing Production', 'Finishing & Packing'],
         knitting_types: (factory?.knitting_types || []).map((kt: any) => kt.id),
         production_capacities: {
             knitting: factory?.machines && factory.machines.length > 0

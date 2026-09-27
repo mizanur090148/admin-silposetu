@@ -56,29 +56,6 @@ class FactoryController extends Controller
         'Leather & Footwear',
     ];
 
-    /**
-     * Default list of factory capabilities.
-     */
-    public const COMMON_CAPABILITIES = [
-        'Circular Knitting',
-        'Flatbed Knitting',
-        'Fabric Dyeing',
-        'Yarn Dyeing',
-        'Sewing Production',
-        'Garment Washing',
-        'Enzyme / Stone Wash',
-        'Screen Printing',
-        'All-Over Printing (AOP)',
-        'Computerized Embroidery',
-        'Heat Transfer Printing',
-        'Laser Cutting',
-        'Finishing & Packing',
-        'Needle Detection & QC Lab',
-        'BSCI / Sedex Compliant',
-        'OEKO-TEX Certified',
-        'GOTS / Organic Certified',
-        'RCS / GRS Recycled Certified',
-    ];
 
     /**
      * Display dedicated queue of pending factory verifications only.
@@ -232,7 +209,6 @@ class FactoryController extends Controller
             'knittingTypes' => $knittingTypes,
             'districts' => self::DISTRICTS,
             'industryTypes' => self::INDUSTRY_TYPES,
-            'commonCapabilities' => self::COMMON_CAPABILITIES,
             'suggestedCustomerId' => User::generateUniqueCustomerId('S'),
         ]);
     }
@@ -262,13 +238,9 @@ class FactoryController extends Controller
             'factory_email' => ['nullable', 'email', 'max:255'],
             'district' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:1000'],
-            'total_lines' => ['nullable', 'integer', 'min:0'],
             'total_machines' => ['nullable', 'integer', 'min:0'],
             'daily_capacity' => ['nullable', 'string', 'max:100'],
-            'rating' => ['nullable', 'numeric', 'min:1', 'max:5'],
             'is_verified' => ['boolean'],
-            'capabilities' => ['nullable', 'array'],
-            'capabilities.*' => ['string', 'max:100'],
             'knitting_types' => ['nullable', 'array'],
             'knitting_types.*' => ['integer'],
             'production_capacities' => ['nullable', 'array'],
@@ -292,24 +264,11 @@ class FactoryController extends Controller
             : 'Shilpo@2026';
 
         // Auto-aggregate capacity metrics if production_capacities is supplied
-        $totalLines = isset($validated['total_lines']) && $validated['total_lines'] !== '' ? (int) $validated['total_lines'] : 0;
         $totalMachines = isset($validated['total_machines']) && $validated['total_machines'] !== '' ? (int) $validated['total_machines'] : 0;
         $dailyCapacity = ! empty($validated['daily_capacity']) ? $validated['daily_capacity'] : null;
 
         if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
             $capacities = $validated['production_capacities'];
-
-            if (! empty($capacities['sewing']) && is_array($capacities['sewing'])) {
-                $sewingLines = (int) ($capacities['sewing']['no_of_lines'] ?? 0);
-                if ($sewingLines > 0 && $totalLines === 0) {
-                    $totalLines = $sewingLines;
-                }
-                $sewingDaily = (float) ($capacities['sewing']['total_capacity_per_day'] ?? 0);
-                $sewingUnit = $capacities['sewing']['unit'] ?? 'Pcs';
-                if ($sewingDaily > 0 && empty($dailyCapacity)) {
-                    $dailyCapacity = number_format($sewingDaily).' '.$sewingUnit.'/Day';
-                }
-            }
 
             // Sum knitting & other machinery counts and aggregate total daily output
             $calcMachines = 0;
@@ -359,7 +318,6 @@ class FactoryController extends Controller
             $validated,
             $customerId,
             $rawPassword,
-            $totalLines,
             $totalMachines,
             $dailyCapacity,
             $logoPath,
@@ -390,13 +348,9 @@ class FactoryController extends Controller
                 'email' => $validated['factory_email'] ?? $validated['email'],
                 'district' => $validated['district'] ?? 'Gazipur',
                 'address' => $validated['address'] ?? null,
-                'total_lines' => $totalLines,
                 'total_machines' => $totalMachines,
                 'daily_capacity' => $dailyCapacity,
-                'rating' => $validated['rating'] ?? 5.0,
                 'is_verified' => (bool) ($validated['is_verified'] ?? ($validated['status'] === 'active')),
-                'capabilities' => $validated['capabilities'] ?? [],
-                'production_capacities' => $validated['production_capacities'] ?? null,
                 'trade_license_no' => $validated['trade_license_no'] ?? null,
                 'trade_license_file' => $uploadedDocs['trade_license_file'] ?? null,
                 'tin_no' => $validated['tin_no'] ?? null,
@@ -478,13 +432,11 @@ class FactoryController extends Controller
                 'address',
                 'industry_type',
                 'contact_person',
-                'total_lines',
                 'total_machines',
                 'daily_capacity',
                 'trade_license_no',
                 'tin_no',
                 'bin_no',
-                'capabilities',
                 'password',
                 'status',
                 'is_verified',
@@ -501,13 +453,11 @@ class FactoryController extends Controller
                     'Plot 12-14, Konabari Industrial Area, Gazipur',
                     'Knitwear & Composite',
                     'Tanvir Hossain',
-                    '28',
                     '450',
                     '20,000 Pcs/Day',
                     'TRAD/GZP/2026/8941',
                     '481928374619',
                     '001829304-0101',
-                    'Circular Knitting | Sewing Production | Fabric Dyeing | Screen Printing',
                     'Shilpo@2026',
                     'active',
                     '1',
@@ -521,13 +471,11 @@ class FactoryController extends Controller
                     'Nischintapur, Ashulia, Savar, Dhaka',
                     'Woven Manufacturing',
                     'Farhan Chowdhury',
-                    '34',
                     '520',
                     '25,000 Pcs/Day',
                     'TRAD/DH/2026/1029',
                     '918273645102',
                     '002938475-0102',
-                    'Sewing Production | Garment Washing | Enzyme / Stone Wash | Finishing & Packing',
                     'Shilpo@2026',
                     'active',
                     '1',
@@ -541,13 +489,11 @@ class FactoryController extends Controller
                     'Kanchpur, Sonargaon, Narayanganj',
                     'Apparel & Garments',
                     'Rafiqul Islam',
-                    '16',
                     '280',
                     '12,000 Pcs/Day',
                     'TRAD/NRG/2026/4521',
                     '746281930281',
                     '003847291-0103',
-                    'Circular Knitting | Yarn Dyeing | Sewing Production | Computerized Embroidery',
                     'Shilpo@2026',
                     'pending',
                     '0',
@@ -628,8 +574,6 @@ class FactoryController extends Controller
                 $headerMap['industry_type'] = $index;
             } elseif (in_array($cleanKey, ['contact_person', 'manager', 'person'])) {
                 $headerMap['contact_person'] = $index;
-            } elseif (in_array($cleanKey, ['total_lines', 'lines', 'sewing_lines'])) {
-                $headerMap['total_lines'] = $index;
             } elseif (in_array($cleanKey, ['total_machines', 'machines'])) {
                 $headerMap['total_machines'] = $index;
             } elseif (in_array($cleanKey, ['daily_capacity', 'capacity'])) {
@@ -640,8 +584,6 @@ class FactoryController extends Controller
                 $headerMap['tin_no'] = $index;
             } elseif (in_array($cleanKey, ['bin_no', 'bin', 'vat_no'])) {
                 $headerMap['bin_no'] = $index;
-            } elseif (in_array($cleanKey, ['capabilities', 'capability', 'services'])) {
-                $headerMap['capabilities'] = $index;
             } elseif (in_array($cleanKey, ['password', 'pass'])) {
                 $headerMap['password'] = $index;
             } elseif (in_array($cleanKey, ['status', 'account_status'])) {
@@ -751,20 +693,11 @@ class FactoryController extends Controller
 
             $address = isset($headerMap['address']) ? trim($row[$headerMap['address']] ?? '') : null;
             $industryType = isset($headerMap['industry_type']) ? trim($row[$headerMap['industry_type']] ?? '') : 'Apparel & Garments';
-            $totalLines = isset($headerMap['total_lines']) ? (int) trim($row[$headerMap['total_lines']] ?? 0) : 0;
             $totalMachines = isset($headerMap['total_machines']) ? (int) trim($row[$headerMap['total_machines']] ?? 0) : 0;
             $dailyCapacity = isset($headerMap['daily_capacity']) ? trim($row[$headerMap['daily_capacity']] ?? '') : null;
             $tradeLicenseNo = isset($headerMap['trade_license_no']) ? trim($row[$headerMap['trade_license_no']] ?? '') : null;
             $tinNo = isset($headerMap['tin_no']) ? trim($row[$headerMap['tin_no']] ?? '') : null;
             $binNo = isset($headerMap['bin_no']) ? trim($row[$headerMap['bin_no']] ?? '') : null;
-
-            // Capabilities parsing (split by | or comma)
-            $capabilitiesStr = isset($headerMap['capabilities']) ? trim($row[$headerMap['capabilities']] ?? '') : '';
-            $capabilities = [];
-            if (! empty($capabilitiesStr)) {
-                $separator = str_contains($capabilitiesStr, '|') ? '|' : ',';
-                $capabilities = array_values(array_filter(array_map('trim', explode($separator, $capabilitiesStr))));
-            }
 
             // Status and verified
             $rowStatus = isset($headerMap['status']) ? strtolower(trim($row[$headerMap['status']] ?? '')) : '';
@@ -796,11 +729,9 @@ class FactoryController extends Controller
                     $contactPerson,
                     $district,
                     $address,
-                    $totalLines,
                     $totalMachines,
                     $dailyCapacity,
                     $isVerified,
-                    $capabilities,
                     $tradeLicenseNo,
                     $tinNo,
                     $binNo
@@ -827,12 +758,9 @@ class FactoryController extends Controller
                         'email' => $rawEmail,
                         'district' => $district,
                         'address' => $address,
-                        'total_lines' => $totalLines,
                         'total_machines' => $totalMachines,
                         'daily_capacity' => $dailyCapacity,
-                        'rating' => 5.0,
                         'is_verified' => $isVerified,
-                        'capabilities' => $capabilities,
                         'trade_license_no' => $tradeLicenseNo,
                         'tin_no' => $tinNo,
                         'bin_no' => $binNo,
@@ -908,7 +836,6 @@ class FactoryController extends Controller
             'knittingTypes' => $knittingTypes,
             'districts' => self::DISTRICTS,
             'industryTypes' => self::INDUSTRY_TYPES,
-            'commonCapabilities' => self::COMMON_CAPABILITIES,
         ]);
     }
 
@@ -940,13 +867,9 @@ class FactoryController extends Controller
             'factory_email' => ['nullable', 'email', 'max:255'],
             'district' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:1000'],
-            'total_lines' => ['nullable', 'integer', 'min:0'],
             'total_machines' => ['nullable', 'integer', 'min:0'],
             'daily_capacity' => ['nullable', 'string', 'max:100'],
-            'rating' => ['nullable', 'numeric', 'min:1', 'max:5'],
             'is_verified' => ['boolean'],
-            'capabilities' => ['nullable', 'array'],
-            'capabilities.*' => ['string', 'max:100'],
             'knitting_types' => ['nullable', 'array'],
             'knitting_types.*' => ['integer'],
             'production_capacities' => ['nullable', 'array'],
@@ -962,24 +885,11 @@ class FactoryController extends Controller
         ]);
 
         // Auto-aggregate capacity metrics if production_capacities is supplied
-        $totalLines = isset($validated['total_lines']) && $validated['total_lines'] !== '' ? (int) $validated['total_lines'] : 0;
         $totalMachines = isset($validated['total_machines']) && $validated['total_machines'] !== '' ? (int) $validated['total_machines'] : ($factory?->total_machines ?? 0);
         $dailyCapacity = ! empty($validated['daily_capacity']) ? $validated['daily_capacity'] : null;
 
         if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
             $capacities = $validated['production_capacities'];
-
-            if (! empty($capacities['sewing']) && is_array($capacities['sewing'])) {
-                $sewingLines = (int) ($capacities['sewing']['no_of_lines'] ?? 0);
-                if ($sewingLines > 0 && empty($validated['total_lines'])) {
-                    $totalLines = $sewingLines;
-                }
-                $sewingDaily = (float) ($capacities['sewing']['total_capacity_per_day'] ?? 0);
-                $sewingUnit = $capacities['sewing']['unit'] ?? 'Pcs';
-                if ($sewingDaily > 0 && empty($validated['daily_capacity'])) {
-                    $dailyCapacity = number_format($sewingDaily).' '.$sewingUnit.'/Day';
-                }
-            }
 
             // Sum knitting & other machinery counts and aggregate total daily output
             $calcMachines = 0;
@@ -1034,7 +944,6 @@ class FactoryController extends Controller
             $user,
             $factory,
             $validated,
-            $totalLines,
             $totalMachines,
             $dailyCapacity,
             $logoPath,
@@ -1068,13 +977,9 @@ class FactoryController extends Controller
                 'email' => $validated['factory_email'] ?? $validated['email'],
                 'district' => $validated['district'] ?? 'Gazipur',
                 'address' => $validated['address'] ?? null,
-                'total_lines' => $totalLines,
                 'total_machines' => $totalMachines,
                 'daily_capacity' => $dailyCapacity,
-                'rating' => $validated['rating'] ?? 5.0,
                 'is_verified' => (bool) ($validated['is_verified'] ?? ($validated['status'] === 'active')),
-                'capabilities' => $validated['capabilities'] ?? [],
-                'production_capacities' => $validated['production_capacities'] ?? null,
                 'trade_license_no' => $validated['trade_license_no'] ?? null,
                 'trade_license_file' => $uploadedDocs['trade_license_file'],
                 'tin_no' => $validated['tin_no'] ?? null,

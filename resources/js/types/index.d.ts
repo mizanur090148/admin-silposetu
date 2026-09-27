@@ -47,10 +47,8 @@ export interface Factory {
     email?: string;
     district?: string;
     address?: string;
-    total_lines?: number;
     total_machines?: number;
     daily_capacity?: string;
-    production_capacities?: ProductionCapacities | null;
     trade_license_no?: string;
     trade_license_file?: string;
     tin_no?: string;
@@ -59,8 +57,6 @@ export interface Factory {
     bin_file?: string;
     nid_file?: string;
     is_verified?: boolean;
-    rating?: number | string;
-    capabilities?: string[] | null;
     knitting_types?: KnittingType[];
     machines?: FactoryMachine[];
     created_at?: string;

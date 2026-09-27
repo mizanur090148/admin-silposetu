@@ -279,7 +279,7 @@ export default function Pending({ factories, filters, districts, pendingCount }:
                                                         {factory?.daily_capacity || factory?.industry_type || 'General Apparel'}
                                                     </div>
                                                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                                                        {factory?.total_lines ?? 0} Lines • {factory?.total_machines ?? 0} Machines
+                                                        {factory?.total_machines ?? 0} Machines
                                                     </div>
                                                 </td>
 

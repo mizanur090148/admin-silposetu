@@ -334,11 +334,6 @@ export default function Import({ districts, industryTypes }: Props) {
                                         <td className="py-2 px-3">e.g. "Knitwear & Composite", "Woven Manufacturing", "Apparel & Garments"</td>
                                     </tr>
                                     <tr>
-                                        <td className="py-2 px-3 font-mono text-slate-700 dark:text-slate-300">total_lines</td>
-                                        <td className="py-2 px-3 text-slate-400 dark:text-slate-500">Optional</td>
-                                        <td className="py-2 px-3">Number of sewing/assembly lines (e.g. 24)</td>
-                                    </tr>
-                                    <tr>
                                         <td className="py-2 px-3 font-mono text-slate-700 dark:text-slate-300">total_machines</td>
                                         <td className="py-2 px-3 text-slate-400 dark:text-slate-500">Optional</td>
                                         <td className="py-2 px-3">Total machinery count (e.g. 450)</td>
@@ -347,11 +342,6 @@ export default function Import({ districts, industryTypes }: Props) {
                                         <td className="py-2 px-3 font-mono text-slate-700 dark:text-slate-300">daily_capacity</td>
                                         <td className="py-2 px-3 text-slate-400 dark:text-slate-500">Optional</td>
                                         <td className="py-2 px-3">Output rate (e.g. "18,000 Pcs/Day" or "5,000 Kg/Day")</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="py-2 px-3 font-mono text-slate-700 dark:text-slate-300">capabilities</td>
-                                        <td className="py-2 px-3 text-slate-400 dark:text-slate-500">Optional</td>
-                                        <td className="py-2 px-3">Pipe or comma-separated tags (e.g. "Circular Knitting | Sewing Production | Fabric Dyeing")</td>
                                     </tr>
                                     <tr>
                                         <td className="py-2 px-3 font-mono text-slate-700 dark:text-slate-300">trade_license_no</td>

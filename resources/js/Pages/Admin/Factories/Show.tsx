@@ -43,18 +43,14 @@ interface Props {
             email: string;
             district: string;
             address: string;
-            total_lines: number;
             total_machines: number;
             daily_capacity: string;
             trade_license_no?: string;
             tin_no?: string;
             bin_no?: string;
             is_verified: boolean;
-            rating: number;
-            capabilities?: Record<string, any>;
             knitting_types?: Array<{ id: number; name: string; slug: string }>;
             machines?: FactoryMachine[];
-            production_capacities?: { knitting?: Array<any>; sewing?: any } | null;
         };
         subcontract_posts?: Array<any>;
     };
@@ -239,15 +235,7 @@ export default function Show({ user }: Props) {
                                 <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                                 <span>Production Capacity & Infrastructure</span>
                             </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-                                {Number(factory?.total_lines) > 0 && (
-                                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60">
-                                        <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Total Lines</span>
-                                        <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">
-                                            {factory?.total_lines} Lines
-                                        </span>
-                                    </div>
-                                )}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60">
                                     <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Total Machines</span>
                                     <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">
@@ -263,24 +251,15 @@ export default function Show({ user }: Props) {
                             </div>
 
                             {/* Registered Knitting Machines Table */}
-                            {((factory?.machines && factory.machines.length > 0) || (factory?.production_capacities?.knitting && factory.production_capacities.knitting.length > 0)) && (() => {
-                                const machineryList = (factory?.machines && factory.machines.length > 0)
-                                    ? factory.machines.map((m: FactoryMachine) => ({
-                                        name: m.machine_type?.name || 'Knitting Machine',
-                                        brand: m.machine_type?.brand_or_model,
-                                        units: m.no_of_machine,
-                                        capPerMachine: m.capacity_per_machine,
-                                        totalCap: m.total_capacity_per_day,
-                                        unit: m.unit_type || 'Kg',
-                                    }))
-                                    : (factory?.production_capacities?.knitting || []).map((m: any) => ({
-                                        name: m.machine_type,
-                                        brand: undefined,
-                                        units: m.no_of_machine,
-                                        capPerMachine: m.capacity_per_machine,
-                                        totalCap: m.total_capacity_per_day,
-                                        unit: m.unit_type || 'Kg',
-                                    }));
+                            {(factory?.machines && factory.machines.length > 0) && (() => {
+                                const machineryList = factory.machines.map((m: FactoryMachine) => ({
+                                    name: m.machine_type?.name || 'Knitting Machine',
+                                    brand: m.machine_type?.brand_or_model,
+                                    units: m.no_of_machine,
+                                    capPerMachine: m.capacity_per_machine,
+                                    totalCap: m.total_capacity_per_day,
+                                    unit: m.unit_type || 'Kg',
+                                }));
 
                                 return (
                                     <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">

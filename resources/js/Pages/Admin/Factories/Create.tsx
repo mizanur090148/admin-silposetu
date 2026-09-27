@@ -33,7 +33,6 @@ interface Props {
     knittingTypes?: KnittingType[];
     districts: string[];
     industryTypes: string[];
-    commonCapabilities: string[];
     suggestedCustomerId: string;
 }
 
@@ -42,7 +41,6 @@ export default function Create({
     knittingTypes = [],
     districts,
     industryTypes,
-    commonCapabilities,
     suggestedCustomerId
 }: Props) {
     const logoInputRef = useRef<HTMLInputElement>(null);
@@ -65,12 +63,9 @@ export default function Create({
         factory_email: string;
         district: string;
         address: string;
-        total_lines: number | string;
         total_machines: number | string;
         daily_capacity: string;
-        rating: number | string;
         is_verified: boolean;
-        capabilities: string[];
         knitting_types: number[];
         production_capacities: {
             sewing?: SewingCapacity;
@@ -105,12 +100,9 @@ export default function Create({
         factory_email: '',
         district: districts[0] || 'Gazipur',
         address: '',
-        total_lines: '',
         total_machines: '',
         daily_capacity: '',
-        rating: 5.0,
         is_verified: true,
-        capabilities: ['Sewing Production', 'Finishing & Packing'],
         knitting_types: [],
         production_capacities: {
             knitting: [],

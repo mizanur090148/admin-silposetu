@@ -44,82 +44,12 @@ class ShilposetuSeeder extends Seeder
                 'email' => 'rahim@shilposetu.com',
                 'district' => 'Gazipur',
                 'address' => 'Plot 45-48, Board Bazar, Gazipur Sadar',
-                'total_lines' => 16,
                 'total_machines' => 180,
                 'daily_capacity' => '25,000 Pcs/Day',
                 'trade_license_no' => 'TRAD/GZP/2023/8892',
                 'tin_no' => '451298452310',
                 'bin_no' => '002938174-0102',
                 'is_verified' => true,
-                'rating' => 4.85,
-                'capabilities' => ['Single Jersey', 'Interlock', 'Fleece', 'Polo Sewing', 'Screen Printing'],
-                'production_capacities' => [
-                    'sewing' => [
-                        'no_of_lines' => 16,
-                        'per_line_capacity' => 1500,
-                        'total_capacity_per_day' => 24000,
-                        'rate' => 38.00,
-                        'unit' => 'Pcs',
-                    ],
-                    'knitting' => [
-                        [
-                            'machine_type' => 'Circular Knitting Machine (Single Jersey)',
-                            'no_of_machine' => 12,
-                            'capacity_per_machine' => 450,
-                            'total_capacity_per_day' => 5400,
-                            'rate' => 22.00,
-                            'unit_type' => 'Kg',
-                        ],
-                        [
-                            'machine_type' => 'Circular Knitting Machine (Rib / Interlock)',
-                            'no_of_machine' => 6,
-                            'capacity_per_machine' => 380,
-                            'total_capacity_per_day' => 2280,
-                            'rate' => 25.00,
-                            'unit_type' => 'Kg',
-                        ],
-                    ],
-                    'yarn_dyeing' => [
-                        [
-                            'machine_type' => 'High Temperature Cone / Package Dyeing Machine',
-                            'no_of_machine' => 4,
-                            'capacity_per_machine' => 1200,
-                            'total_capacity_per_day' => 4800,
-                            'rate' => 65.00,
-                            'unit_type' => 'Kg',
-                        ],
-                    ],
-                    'fabric_dyeing' => [
-                        [
-                            'machine_type' => 'Eco Soft Flow Fabric Dyeing (Air/Jet)',
-                            'no_of_machine' => 6,
-                            'capacity_per_machine' => 2000,
-                            'total_capacity_per_day' => 12000,
-                            'rate' => 45.00,
-                            'unit_type' => 'Kg',
-                        ],
-                    ],
-                    'print' => [
-                        [
-                            'machine_type' => 'Automatic Oval Screen Printing Machine (12–18 Color)',
-                            'no_of_machine' => 2,
-                            'capacity_per_machine' => 4500,
-                            'total_capacity_per_day' => 9000,
-                            'rate' => 18.00,
-                            'unit_type' => 'Pcs',
-                        ],
-                    ],
-                    'embroidery' => [
-                        [
-                            'machine_type' => 'Multi-Head Computerized Embroidery (9/12 Needle)',
-                            'no_of_machine' => 4,
-                            'capacity_per_machine' => 1200,
-                            'total_capacity_per_day' => 4800,
-                            'rate' => 12.00,
-                            'unit_type' => 'Pcs',
-                        ],
-                    ],
-                ],
             ]
         );
 
@@ -163,15 +93,12 @@ class ShilposetuSeeder extends Seeder
                 'email' => 'contact@artisticdesign.com',
                 'district' => 'Ashulia',
                 'address' => '232-233 East Narashinshapur, Ashulia, Dhaka',
-                'total_lines' => 34,
                 'total_machines' => 450,
                 'daily_capacity' => '50,000 Pcs/Day',
                 'trade_license_no' => 'TRAD/DH/ASH/2021/412',
                 'tin_no' => '129038475619',
                 'bin_no' => '001928374-0101',
                 'is_verified' => true,
-                'rating' => 4.90,
-                'capabilities' => ['Woven Shirts', 'Trousers', 'Knit Polo', 'Automated Cutting'],
             ]
         );
 
@@ -200,12 +127,9 @@ class ShilposetuSeeder extends Seeder
                 'email' => 'info@modernwashing.com',
                 'district' => 'Gazipur',
                 'address' => 'Nishat Nagar, Tongi, Gazipur',
-                'total_lines' => 8,
                 'total_machines' => 40,
                 'daily_capacity' => '30,000 Pcs/Day',
                 'is_verified' => true,
-                'rating' => 4.80,
-                'capabilities' => ['Dry Process & Over Dyeing capability included', 'Enzyme Wash', 'PP Spray', 'Laser Whisker'],
             ]
         );
 
@@ -234,12 +158,9 @@ class ShilposetuSeeder extends Seeder
                 'email' => 'info@exploregarments.com',
                 'district' => 'Tangail',
                 'address' => 'Gorai, Mirzapur, Tangail',
-                'total_lines' => 10,
                 'total_machines' => 120,
                 'daily_capacity' => '15,000 Pcs/Day',
                 'is_verified' => true,
-                'rating' => 4.70,
-                'capabilities' => ['Basic T-Shirt', 'Tank Top', 'Hoodies'],
             ]
         );
 
@@ -268,12 +189,9 @@ class ShilposetuSeeder extends Seeder
                 'email' => 'subcontract@hameemgroup.com',
                 'district' => 'Gazipur',
                 'address' => 'Sripur, Maona, Gazipur, Bangladesh',
-                'total_lines' => 45,
                 'total_machines' => 600,
                 'daily_capacity' => '80,000 Pcs/Day',
                 'is_verified' => true,
-                'rating' => 4.95,
-                'capabilities' => ['Heavy Denim', 'Twill', 'Chino', 'Automated Stitching'],
             ]
         );
 
