@@ -10,6 +10,7 @@ import {
     Check,
     X,
     Trash2,
+    Edit2,
     ToggleLeft,
     ToggleRight,
     Filter,
@@ -45,10 +46,28 @@ export default function Index({
     const [search, setSearch] = useState(filters.search || '');
     const [showAddModal, setShowAddModal] = useState(false);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [editingMachine, setEditingMachine] = useState<MachineType | null>(null);
 
     // Single Add Form
     const { data: addData, setData: setAddData, post: postAdd, processing: adding, errors: addErrors, reset: resetAdd } = useForm({
         category: Object.keys(categories)[0] || 'knitting',
+        name: '',
+        brand_or_model: '',
+        default_unit: 'Kg',
+        sort_order: 1,
+        is_active: true,
+    });
+
+    // Single Edit Form
+    const {
+        data: editData,
+        setData: setEditData,
+        put: putEdit,
+        processing: updating,
+        errors: editErrors,
+        reset: resetEdit,
+    } = useForm({
+        category: 'knitting',
         name: '',
         brand_or_model: '',
         default_unit: 'Kg',
@@ -104,6 +123,30 @@ export default function Index({
             onSuccess: () => {
                 setShowAddModal(false);
                 resetAdd();
+            },
+        });
+    };
+
+    const startEditing = (item: MachineType) => {
+        setEditingMachine(item);
+        setEditData({
+            category: item.category,
+            name: item.name,
+            brand_or_model: item.brand_or_model || '',
+            default_unit: item.default_unit || 'Kg',
+            sort_order: item.sort_order ?? 1,
+            is_active: Boolean(item.is_active),
+        });
+    };
+
+    const submitEdit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingMachine) return;
+
+        putEdit(route('admin.machine-types.update', editingMachine.id), {
+            onSuccess: () => {
+                setEditingMachine(null);
+                resetEdit();
             },
         });
     };
@@ -264,14 +307,24 @@ export default function Index({
                                                 </button>
                                             </td>
                                             <td className="py-2 px-4 text-right">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDelete(item.id, item.name)}
-                                                    className="p-1 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition"
-                                                    title="Delete machine type"
-                                                >
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => startEditing(item)}
+                                                        className="p-1.5 text-slate-400 hover:text-blue-600 dark:text-slate-500 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                                                        title="Edit machine type"
+                                                    >
+                                                        <Edit2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDelete(item.id, item.name)}
+                                                        className="p-1.5 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                                                        title="Delete machine type"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -301,7 +354,7 @@ export default function Index({
                                     <Cpu className="w-4 h-4 text-blue-500 dark:text-blue-400" />
                                     <span>Add New Machine Type</span>
                                 </h3>
-                                <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                                <button onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer">
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
@@ -396,7 +449,7 @@ export default function Index({
                                     <button
                                         type="button"
                                         onClick={() => setShowAddModal(false)}
-                                        className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 transition"
+                                        className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 transition cursor-pointer"
                                     >
                                         Cancel
                                     </button>
@@ -406,6 +459,142 @@ export default function Index({
                                         className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/30 transition cursor-pointer"
                                     >
                                         {adding ? 'Saving...' : 'Add Machine'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+
+                {/* MODAL: EDIT MACHINE TYPE */}
+                {editingMachine && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/70 backdrop-blur-xs">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                    </div>
+                                    <span>Edit Machine Type: {editingMachine.name}</span>
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        setEditingMachine(null);
+                                        resetEdit();
+                                    }}
+                                    className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg transition cursor-pointer"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={submitEdit} className="space-y-4 text-xs">
+                                <div>
+                                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                                        Department Category <span className="text-rose-500 dark:text-rose-400">*</span>
+                                    </label>
+                                    <select
+                                        value={editData.category}
+                                        onChange={e => setEditData('category', e.target.value)}
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
+                                    >
+                                        {Object.entries(categories).map(([k, label]) => (
+                                            <option key={k} value={k}>{label}</option>
+                                        ))}
+                                    </select>
+                                    {editErrors.category && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.category}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                                        Machine Name / Model <span className="text-rose-500 dark:text-rose-400">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={editData.name}
+                                        onChange={e => setEditData('name', e.target.value)}
+                                        placeholder="e.g. Single Jersey Circular Knitting Machine"
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
+                                    />
+                                    {editErrors.name && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.name}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                                        Brand / Reference Specs
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={editData.brand_or_model}
+                                        onChange={e => setEditData('brand_or_model', e.target.value)}
+                                        placeholder="e.g. Fukuhara / Mayer & Cie"
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
+                                    />
+                                    {editErrors.brand_or_model && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.brand_or_model}</p>}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                                            Default Unit
+                                        </label>
+                                        <select
+                                            value={editData.default_unit}
+                                            onChange={e => setEditData('default_unit', e.target.value)}
+                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
+                                        >
+                                            {defaultUnits.map(u => (
+                                                <option key={u} value={u}>{u}</option>
+                                            ))}
+                                        </select>
+                                        {editErrors.default_unit && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.default_unit}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
+                                            Sort Order
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={editData.sort_order}
+                                            onChange={e => setEditData('sort_order', parseInt(e.target.value) || 0)}
+                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500 transition"
+                                        />
+                                        {editErrors.sort_order && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.sort_order}</p>}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 pt-2">
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={editData.is_active}
+                                            onChange={e => setEditData('is_active', e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-8 h-4 bg-slate-200 dark:bg-slate-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+                                        <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">Active</span>
+                                    </label>
+                                </div>
+
+                                <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setEditingMachine(null);
+                                            resetEdit();
+                                        }}
+                                        className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 transition cursor-pointer"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={updating}
+                                        className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/30 transition disabled:opacity-50 cursor-pointer"
+                                    >
+                                        {updating ? 'Updating...' : 'Save Changes'}
                                     </button>
                                 </div>
                             </form>

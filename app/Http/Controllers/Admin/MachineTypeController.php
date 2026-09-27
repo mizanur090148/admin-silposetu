@@ -105,6 +105,34 @@ class MachineTypeController extends Controller
     }
 
     /**
+     * Update the specified machine type.
+     */
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $machine = MachineType::findOrFail($id);
+
+        $validated = $request->validate([
+            'category' => ['required', 'string', 'in:'.implode(',', array_keys(self::CATEGORIES))],
+            'name' => ['required', 'string', 'max:255'],
+            'brand_or_model' => ['nullable', 'string', 'max:255'],
+            'default_unit' => ['required', 'string', 'max:50'],
+            'sort_order' => ['nullable', 'integer', 'min:0'],
+            'is_active' => ['boolean'],
+        ]);
+
+        $machine->update([
+            'category' => $validated['category'],
+            'name' => $validated['name'],
+            'brand_or_model' => $validated['brand_or_model'] ?? null,
+            'default_unit' => $validated['default_unit'],
+            'sort_order' => $validated['sort_order'] ?? $machine->sort_order,
+            'is_active' => $request->boolean('is_active', $machine->is_active),
+        ]);
+
+        return back()->with('success', "Machine type '{$machine->name}' updated successfully.");
+    }
+
+    /**
      * Toggle active state.
      */
     public function toggle(int $id): RedirectResponse

@@ -50,8 +50,9 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/machine-types', [MachineTypeController::class, 'store'])->name('admin.machine-types.store');
     Route::post('/machine-types/import', [MachineTypeController::class, 'importStore'])->name('admin.machine-types.import');
     Route::get('/machine-types/template', [MachineTypeController::class, 'downloadTemplate'])->name('admin.machine-types.template');
-    Route::post('/machine-types/{id}/toggle', [MachineTypeController::class, 'toggle'])->name('admin.machine-types.toggle');
-    Route::delete('/machine-types/{id}', [MachineTypeController::class, 'destroy'])->name('admin.machine-types.destroy');
+    Route::match(['put', 'post'], '/machine-types/{id}', [MachineTypeController::class, 'update'])->where('id', '[0-9]+')->name('admin.machine-types.update');
+    Route::post('/machine-types/{id}/toggle', [MachineTypeController::class, 'toggle'])->where('id', '[0-9]+')->name('admin.machine-types.toggle');
+    Route::delete('/machine-types/{id}', [MachineTypeController::class, 'destroy'])->where('id', '[0-9]+')->name('admin.machine-types.destroy');
 
     // Knitting Types Master Data CRUD
     Route::get('/knitting-types', [KnittingTypeController::class, 'index'])->name('admin.knitting-types.index');
