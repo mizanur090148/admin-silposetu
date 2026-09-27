@@ -409,6 +409,29 @@ class FactoryController extends Controller
             if (! empty($validated['knitting_types'])) {
                 $factory->knittingTypes()->sync($validated['knitting_types']);
             }
+
+            // Sync factory machines
+            if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
+                $order = 1;
+                foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
+                    if (! empty($validated['production_capacities'][$dept]) && is_array($validated['production_capacities'][$dept])) {
+                        foreach ($validated['production_capacities'][$dept] as $row) {
+                            $mTypeId = ! empty($row['machine_type_id']) ? (int) $row['machine_type_id'] : null;
+                            if ($mTypeId) {
+                                $factory->machines()->create([
+                                    'machine_type_id' => $mTypeId,
+                                    'category' => $dept ?: 'knitting',
+                                    'no_of_machine' => (int) ($row['no_of_machine'] ?? 1),
+                                    'capacity_per_machine' => (float) ($row['capacity_per_machine'] ?? 0),
+                                    'total_capacity_per_day' => (float) ($row['total_capacity_per_day'] ?? 0),
+                                    'unit_type' => $row['unit_type'] ?? 'Kg',
+                                    'sort_order' => $order++,
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
         });
 
         return redirect()->route('admin.factories.show', $user->id)
@@ -854,6 +877,7 @@ class FactoryController extends Controller
     {
         $user = User::with([
             'factory.knittingTypes',
+            'factory.machines.machineType',
             'subcontractPosts' => fn ($q) => $q->latest()->take(5),
             'quotations' => fn ($q) => $q->latest()->take(5),
         ])->findOrFail($id);
@@ -868,7 +892,7 @@ class FactoryController extends Controller
      */
     public function edit(int $id): Response
     {
-        $user = User::with('factory.knittingTypes')->findOrFail($id);
+        $user = User::with(['factory.knittingTypes', 'factory.machines.machineType'])->findOrFail($id);
 
         $machineTypes = MachineType::query()
             ->active()
@@ -1070,6 +1094,30 @@ class FactoryController extends Controller
 
             if ($targetFactory) {
                 $targetFactory->knittingTypes()->sync($validated['knitting_types'] ?? []);
+
+                // Sync factory machines
+                $targetFactory->machines()->delete();
+                if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
+                    $order = 1;
+                    foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
+                        if (! empty($validated['production_capacities'][$dept]) && is_array($validated['production_capacities'][$dept])) {
+                            foreach ($validated['production_capacities'][$dept] as $row) {
+                                $mTypeId = ! empty($row['machine_type_id']) ? (int) $row['machine_type_id'] : null;
+                                if ($mTypeId) {
+                                    $targetFactory->machines()->create([
+                                        'machine_type_id' => $mTypeId,
+                                        'category' => $dept ?: 'knitting',
+                                        'no_of_machine' => (int) ($row['no_of_machine'] ?? 1),
+                                        'capacity_per_machine' => (float) ($row['capacity_per_machine'] ?? 0),
+                                        'total_capacity_per_day' => (float) ($row['total_capacity_per_day'] ?? 0),
+                                        'unit_type' => $row['unit_type'] ?? 'Kg',
+                                        'sort_order' => $order++,
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
             }
         });
 

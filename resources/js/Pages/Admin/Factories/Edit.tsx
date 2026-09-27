@@ -27,7 +27,7 @@ import {
     ExternalLink,
     Save
 } from 'lucide-react';
-import { MachineType, NonSewingMachineRow, SewingCapacity, KnittingType } from '@/types';
+import { MachineType, NonSewingMachineRow, SewingCapacity, KnittingType, FactoryMachine } from '@/types';
 
 interface Props {
     user: {
@@ -56,6 +56,7 @@ interface Props {
             is_verified?: boolean;
             capabilities?: string[];
             knitting_types?: Array<{ id: number; name: string; slug: string }>;
+            machines?: FactoryMachine[];
             production_capacities?: {
                 sewing?: SewingCapacity;
                 knitting?: NonSewingMachineRow[];
@@ -160,7 +161,17 @@ export default function Edit({
         capabilities: factory?.capabilities || ['Sewing Production', 'Finishing & Packing'],
         knitting_types: (factory?.knitting_types || []).map((kt: any) => kt.id),
         production_capacities: {
-            knitting: factory?.production_capacities?.knitting || [],
+            knitting: factory?.machines && factory.machines.length > 0
+                ? factory.machines.map((m: any) => ({
+                    id: String(m.id),
+                    machine_type: m.machine_type?.name || '',
+                    machine_type_id: m.machine_type_id,
+                    no_of_machine: m.no_of_machine,
+                    capacity_per_machine: m.capacity_per_machine,
+                    total_capacity_per_day: m.total_capacity_per_day,
+                    unit_type: m.unit_type || 'Kg',
+                }))
+                : (factory?.production_capacities?.knitting || []),
         },
         trade_license_no: factory?.trade_license_no || '',
         tin_no: factory?.tin_no || '',

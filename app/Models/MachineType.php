@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MachineType extends Model
 {
@@ -51,5 +52,13 @@ class MachineType extends Model
     public function scopeByCategory(Builder $query, string $category): Builder
     {
         return $query->where('category', $category);
+    }
+
+    /**
+     * Factory machines referencing this machine type.
+     */
+    public function factoryMachines(): HasMany
+    {
+        return $this->hasMany(FactoryMachine::class);
     }
 }

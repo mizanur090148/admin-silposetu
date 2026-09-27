@@ -21,6 +21,7 @@ import {
     AlertCircle,
     Edit3
 } from 'lucide-react';
+import { FactoryMachine } from '@/types';
 
 interface Props {
     user: {
@@ -52,6 +53,7 @@ interface Props {
             rating: number;
             capabilities?: Record<string, any>;
             knitting_types?: Array<{ id: number; name: string; slug: string }>;
+            machines?: FactoryMachine[];
             production_capacities?: { knitting?: Array<any>; sewing?: any } | null;
         };
         subcontract_posts?: Array<any>;
@@ -261,48 +263,73 @@ export default function Show({ user }: Props) {
                             </div>
 
                             {/* Registered Knitting Machines Table */}
-                            {factory?.production_capacities?.knitting && factory.production_capacities.knitting.length > 0 && (
-                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-slate-900 dark:text-white">
-                                            Registered Knitting Machinery
-                                        </span>
-                                        <span className="text-[11px] text-slate-500">
-                                            {factory.production_capacities.knitting.length} machinery categories
-                                        </span>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left text-xs border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
-                                            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
-                                                <tr>
-                                                    <th className="px-3 py-2">Machine Type</th>
-                                                    <th className="px-3 py-2 text-center">Units</th>
-                                                    <th className="px-3 py-2 text-right">Daily Cap. / Machine</th>
-                                                    <th className="px-3 py-2 text-right">Total Daily Capacity</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                                {factory.production_capacities.knitting.map((m: any, idx: number) => (
-                                                    <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                                        <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">
-                                                            {m.machine_type}
-                                                        </td>
-                                                        <td className="px-3 py-2.5 text-center font-mono">
-                                                            {m.no_of_machine}
-                                                        </td>
-                                                        <td className="px-3 py-2.5 text-right font-mono text-slate-600 dark:text-slate-300">
-                                                            {m.capacity_per_machine} {m.unit_type || 'Kg'}
-                                                        </td>
-                                                        <td className="px-3 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
-                                                            {m.total_capacity_per_day} {m.unit_type || 'Kg'}
-                                                        </td>
+                            {((factory?.machines && factory.machines.length > 0) || (factory?.production_capacities?.knitting && factory.production_capacities.knitting.length > 0)) && (() => {
+                                const machineryList = (factory?.machines && factory.machines.length > 0)
+                                    ? factory.machines.map((m: FactoryMachine) => ({
+                                        name: m.machine_type?.name || 'Knitting Machine',
+                                        brand: m.machine_type?.brand_or_model,
+                                        units: m.no_of_machine,
+                                        capPerMachine: m.capacity_per_machine,
+                                        totalCap: m.total_capacity_per_day,
+                                        unit: m.unit_type || 'Kg',
+                                    }))
+                                    : (factory?.production_capacities?.knitting || []).map((m: any) => ({
+                                        name: m.machine_type,
+                                        brand: undefined,
+                                        units: m.no_of_machine,
+                                        capPerMachine: m.capacity_per_machine,
+                                        totalCap: m.total_capacity_per_day,
+                                        unit: m.unit_type || 'Kg',
+                                    }));
+
+                                return (
+                                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                                Registered Knitting Machinery
+                                            </span>
+                                            <span className="text-[11px] text-slate-500">
+                                                {machineryList.length} machinery categories
+                                            </span>
+                                        </div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-xs border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                                                <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
+                                                    <tr>
+                                                        <th className="px-3 py-2">Machine Type</th>
+                                                        <th className="px-3 py-2 text-center">Units</th>
+                                                        <th className="px-3 py-2 text-right">Daily Cap. / Machine</th>
+                                                        <th className="px-3 py-2 text-right">Total Daily Capacity</th>
                                                     </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                                </thead>
+                                                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                    {machineryList.map((m: { name: string; brand?: string | null; units: number; capPerMachine: any; totalCap: any; unit: string }, idx: number) => (
+                                                        <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                                            <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">
+                                                                <div>{m.name}</div>
+                                                                {m.brand && (
+                                                                    <div className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                                                                        {m.brand}
+                                                                    </div>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-center font-mono">
+                                                                {m.units}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-right font-mono text-slate-600 dark:text-slate-300">
+                                                                {m.capPerMachine} {m.unit}
+                                                            </td>
+                                                            <td className="px-3 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
+                                                                {m.totalCap} {m.unit}
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
                         </div>
 
                         {/* Section 3: Legal & KYC Documents */}

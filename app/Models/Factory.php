@@ -91,4 +91,12 @@ class Factory extends Model
     {
         return $this->belongsToMany(KnittingType::class, 'factory_knitting_types')->withTimestamps();
     }
+
+    /**
+     * Machinery roster installed in this factory.
+     */
+    public function machines(): HasMany
+    {
+        return $this->hasMany(FactoryMachine::class)->orderBy('category')->orderBy('sort_order');
+    }
 }

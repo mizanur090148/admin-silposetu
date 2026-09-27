@@ -62,6 +62,22 @@ export interface Factory {
     rating?: number | string;
     capabilities?: string[] | null;
     knitting_types?: KnittingType[];
+    machines?: FactoryMachine[];
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface FactoryMachine {
+    id: number;
+    factory_id: number;
+    machine_type_id: number;
+    category: string;
+    no_of_machine: number;
+    capacity_per_machine: number | string;
+    total_capacity_per_day: number | string;
+    unit_type: string;
+    sort_order: number;
+    machine_type?: MachineType;
     created_at?: string;
     updated_at?: string;
 }
