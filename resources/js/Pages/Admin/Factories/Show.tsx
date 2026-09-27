@@ -52,6 +52,7 @@ interface Props {
             rating: number;
             capabilities?: Record<string, any>;
             knitting_types?: Array<{ id: number; name: string; slug: string }>;
+            production_capacities?: { knitting?: Array<any>; sewing?: any } | null;
         };
         subcontract_posts?: Array<any>;
     };
@@ -236,13 +237,15 @@ export default function Show({ user }: Props) {
                                 <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                                 <span>Production Capacity & Infrastructure</span>
                             </h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                                <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60">
-                                    <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Total Lines</span>
-                                    <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">
-                                        {factory?.total_lines || 0} Lines
-                                    </span>
-                                </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                                {Number(factory?.total_lines) > 0 && (
+                                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60">
+                                        <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Total Lines</span>
+                                        <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">
+                                            {factory?.total_lines} Lines
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/60">
                                     <span className="text-slate-500 dark:text-slate-400 block text-[11px]">Total Machines</span>
                                     <span className="text-xl font-black text-slate-900 dark:text-white mt-1 block">
@@ -256,6 +259,50 @@ export default function Show({ user }: Props) {
                                     </span>
                                 </div>
                             </div>
+
+                            {/* Registered Knitting Machines Table */}
+                            {factory?.production_capacities?.knitting && factory.production_capacities.knitting.length > 0 && (
+                                <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 space-y-2.5">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                            Registered Knitting Machinery
+                                        </span>
+                                        <span className="text-[11px] text-slate-500">
+                                            {factory.production_capacities.knitting.length} machinery categories
+                                        </span>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-xs border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+                                            <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-800">
+                                                <tr>
+                                                    <th className="px-3 py-2">Machine Type</th>
+                                                    <th className="px-3 py-2 text-center">Units</th>
+                                                    <th className="px-3 py-2 text-right">Daily Cap. / Machine</th>
+                                                    <th className="px-3 py-2 text-right">Total Daily Capacity</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                                {factory.production_capacities.knitting.map((m: any, idx: number) => (
+                                                    <tr key={idx} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                                        <td className="px-3 py-2.5 font-medium text-slate-900 dark:text-white">
+                                                            {m.machine_type}
+                                                        </td>
+                                                        <td className="px-3 py-2.5 text-center font-mono">
+                                                            {m.no_of_machine}
+                                                        </td>
+                                                        <td className="px-3 py-2.5 text-right font-mono text-slate-600 dark:text-slate-300">
+                                                            {m.capacity_per_machine} {m.unit_type || 'Kg'}
+                                                        </td>
+                                                        <td className="px-3 py-2.5 text-right font-mono font-bold text-blue-600 dark:text-blue-400">
+                                                            {m.total_capacity_per_day} {m.unit_type || 'Kg'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Section 3: Legal & KYC Documents */}

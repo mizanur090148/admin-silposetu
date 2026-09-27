@@ -73,12 +73,13 @@ export default function Create({
         capabilities: string[];
         knitting_types: number[];
         production_capacities: {
-            sewing: SewingCapacity;
+            sewing?: SewingCapacity;
             knitting: NonSewingMachineRow[];
-            yarn_dyeing: NonSewingMachineRow[];
-            fabric_dyeing: NonSewingMachineRow[];
-            print: NonSewingMachineRow[];
-            embroidery: NonSewingMachineRow[];
+            yarn_dyeing?: NonSewingMachineRow[];
+            fabric_dyeing?: NonSewingMachineRow[];
+            print?: NonSewingMachineRow[];
+            embroidery?: NonSewingMachineRow[];
+            [key: string]: any;
         };
         trade_license_no: string;
         tin_no: string;
@@ -112,17 +113,7 @@ export default function Create({
         capabilities: ['Sewing Production', 'Finishing & Packing'],
         knitting_types: [],
         production_capacities: {
-            sewing: {
-                no_of_lines: 12,
-                per_line_capacity: 1000,
-                total_capacity_per_day: 12000,
-                unit: 'Pcs',
-            },
             knitting: [],
-            yarn_dyeing: [],
-            fabric_dyeing: [],
-            print: [],
-            embroidery: [],
         },
         trade_license_no: '',
         tin_no: '',

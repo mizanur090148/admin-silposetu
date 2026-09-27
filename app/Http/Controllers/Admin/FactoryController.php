@@ -292,14 +292,14 @@ class FactoryController extends Controller
             : 'Shilpo@2026';
 
         // Auto-aggregate capacity metrics if production_capacities is supplied
-        $totalLines = isset($validated['total_lines']) ? (int) $validated['total_lines'] : 0;
-        $totalMachines = isset($validated['total_machines']) ? (int) $validated['total_machines'] : 0;
-        $dailyCapacity = $validated['daily_capacity'] ?? null;
+        $totalLines = isset($validated['total_lines']) && $validated['total_lines'] !== '' ? (int) $validated['total_lines'] : 0;
+        $totalMachines = isset($validated['total_machines']) && $validated['total_machines'] !== '' ? (int) $validated['total_machines'] : 0;
+        $dailyCapacity = ! empty($validated['daily_capacity']) ? $validated['daily_capacity'] : null;
 
         if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
             $capacities = $validated['production_capacities'];
 
-            if (isset($capacities['sewing']) && is_array($capacities['sewing'])) {
+            if (! empty($capacities['sewing']) && is_array($capacities['sewing'])) {
                 $sewingLines = (int) ($capacities['sewing']['no_of_lines'] ?? 0);
                 if ($sewingLines > 0 && $totalLines === 0) {
                     $totalLines = $sewingLines;
@@ -311,17 +311,28 @@ class FactoryController extends Controller
                 }
             }
 
-            // Sum non-sewing machines
+            // Sum knitting & other machinery counts and aggregate total daily output
             $calcMachines = 0;
+            $calcDaily = 0;
+            $dailyUnit = 'Kg';
             foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
                 if (isset($capacities[$dept]) && is_array($capacities[$dept])) {
                     foreach ($capacities[$dept] as $row) {
                         $calcMachines += (int) ($row['no_of_machine'] ?? 0);
+                        if (! empty($row['total_capacity_per_day'])) {
+                            $calcDaily += (float) $row['total_capacity_per_day'];
+                            if (! empty($row['unit_type'])) {
+                                $dailyUnit = $row['unit_type'];
+                            }
+                        }
                     }
                 }
             }
             if ($calcMachines > 0 && $totalMachines === 0) {
                 $totalMachines = $calcMachines;
+            }
+            if ($calcDaily > 0 && empty($dailyCapacity)) {
+                $dailyCapacity = number_format($calcDaily).' '.$dailyUnit.'/Day';
             }
         }
 
@@ -927,14 +938,14 @@ class FactoryController extends Controller
         ]);
 
         // Auto-aggregate capacity metrics if production_capacities is supplied
-        $totalLines = isset($validated['total_lines']) ? (int) $validated['total_lines'] : ($factory?->total_lines ?? 0);
-        $totalMachines = isset($validated['total_machines']) ? (int) $validated['total_machines'] : ($factory?->total_machines ?? 0);
-        $dailyCapacity = $validated['daily_capacity'] ?? ($factory?->daily_capacity ?? null);
+        $totalLines = isset($validated['total_lines']) && $validated['total_lines'] !== '' ? (int) $validated['total_lines'] : 0;
+        $totalMachines = isset($validated['total_machines']) && $validated['total_machines'] !== '' ? (int) $validated['total_machines'] : ($factory?->total_machines ?? 0);
+        $dailyCapacity = ! empty($validated['daily_capacity']) ? $validated['daily_capacity'] : null;
 
         if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
             $capacities = $validated['production_capacities'];
 
-            if (isset($capacities['sewing']) && is_array($capacities['sewing'])) {
+            if (! empty($capacities['sewing']) && is_array($capacities['sewing'])) {
                 $sewingLines = (int) ($capacities['sewing']['no_of_lines'] ?? 0);
                 if ($sewingLines > 0 && empty($validated['total_lines'])) {
                     $totalLines = $sewingLines;
@@ -946,17 +957,28 @@ class FactoryController extends Controller
                 }
             }
 
-            // Sum non-sewing machines
+            // Sum knitting & other machinery counts and aggregate total daily output
             $calcMachines = 0;
+            $calcDaily = 0;
+            $dailyUnit = 'Kg';
             foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
                 if (isset($capacities[$dept]) && is_array($capacities[$dept])) {
                     foreach ($capacities[$dept] as $row) {
                         $calcMachines += (int) ($row['no_of_machine'] ?? 0);
+                        if (! empty($row['total_capacity_per_day'])) {
+                            $calcDaily += (float) $row['total_capacity_per_day'];
+                            if (! empty($row['unit_type'])) {
+                                $dailyUnit = $row['unit_type'];
+                            }
+                        }
                     }
                 }
             }
             if ($calcMachines > 0 && empty($validated['total_machines'])) {
                 $totalMachines = $calcMachines;
+            }
+            if ($calcDaily > 0 && empty($validated['daily_capacity'])) {
+                $dailyCapacity = number_format($calcDaily).' '.$dailyUnit.'/Day';
             }
         }
 
