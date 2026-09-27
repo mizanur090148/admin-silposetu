@@ -401,7 +401,7 @@ class FactoryController extends Controller
         });
 
         return redirect()->route('admin.factories.show', $user->id)
-            ->with('success', "Factory '{$validated['business_name']}' created successfully (Customer ID: {$customerId}). Default password: {$rawPassword}");
+            ->with('success', "Factory '{$validated['business_name']}' created successfully (Customer ID: {$customerId}).");
     }
 
     /**

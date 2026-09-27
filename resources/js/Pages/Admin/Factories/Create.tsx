@@ -26,10 +26,11 @@ import {
     X,
     Image as ImageIcon
 } from 'lucide-react';
-import { MachineType, NonSewingMachineRow, SewingCapacity } from '@/types';
+import { MachineType, NonSewingMachineRow, SewingCapacity, KnittingType } from '@/types';
 
 interface Props {
     machineTypes: MachineType[];
+    knittingTypes?: KnittingType[];
     districts: string[];
     industryTypes: string[];
     commonCapabilities: string[];
@@ -38,12 +39,12 @@ interface Props {
 
 export default function Create({
     machineTypes,
+    knittingTypes = [],
     districts,
     industryTypes,
     commonCapabilities,
     suggestedCustomerId
 }: Props) {
-    const [activeDepartment, setActiveDepartment] = useState<'sewing' | 'knitting' | 'yarn_dyeing' | 'fabric_dyeing' | 'print' | 'embroidery'>('sewing');
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
@@ -70,6 +71,7 @@ export default function Create({
         rating: number | string;
         is_verified: boolean;
         capabilities: string[];
+        knitting_types: number[];
         production_capacities: {
             sewing: SewingCapacity;
             knitting: NonSewingMachineRow[];
@@ -108,6 +110,7 @@ export default function Create({
         rating: 5.0,
         is_verified: true,
         capabilities: ['Sewing Production', 'Finishing & Packing'],
+        knitting_types: [],
         production_capacities: {
             sewing: {
                 no_of_lines: 12,
@@ -150,26 +153,6 @@ export default function Create({
         setLogoPreview(null);
         if (logoInputRef.current) {
             logoInputRef.current.value = '';
-        }
-    };
-
-    // Sewing calculation helper
-    const handleSewingChange = (field: keyof SewingCapacity, val: any) => {
-        const current = { ...data.production_capacities.sewing, [field]: val };
-        const lines = Number(current.no_of_lines) || 0;
-        const perLine = Number(current.per_line_capacity) || 0;
-        current.total_capacity_per_day = lines * perLine;
-
-        setData('production_capacities', {
-            ...data.production_capacities,
-            sewing: current,
-        });
-
-        if (lines > 0) {
-            setData('total_lines', lines);
-        }
-        if (current.total_capacity_per_day > 0) {
-            setData('daily_capacity', `${current.total_capacity_per_day.toLocaleString()} ${current.unit || 'Pcs'}/Day`);
         }
     };
 
@@ -233,6 +216,15 @@ export default function Create({
             ...data.production_capacities,
             [category]: rows,
         });
+    };
+
+    const toggleKnittingType = (id: number) => {
+        const current = data.knitting_types || [];
+        if (current.includes(id)) {
+            setData('knitting_types', current.filter(item => item !== id));
+        } else {
+            setData('knitting_types', [...current, id]);
+        }
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -596,125 +588,142 @@ export default function Create({
                                 <Cpu className="w-4 h-4" />
                             </div>
                             <div>
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">3. Department Machinery Breakdown</h2>
+                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">3. Knitting Types & Machines</h2>
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400">Configure machine rows and line output by department</p>
                             </div>
                         </div>
 
-                        {/* Department Tabs */}
-                            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                                {[
-                                    { key: 'sewing', label: 'Sewing Lines' },
-                                    { key: 'knitting', label: 'Knitting' },
-                                    { key: 'fabric_dyeing', label: 'Fabric Dyeing' },
-                                    { key: 'yarn_dyeing', label: 'Yarn Dyeing' },
-                                    { key: 'print', label: 'Printing' },
-                                    { key: 'embroidery', label: 'Embroidery' },
-                                ].map(tab => (
-                                    <button
-                                        type="button"
-                                        key={tab.key}
-                                        onClick={() => setActiveDepartment(tab.key as any)}
-                                        className={`px-3 py-1.5 rounded-xl font-medium transition cursor-pointer shrink-0 ${activeDepartment === tab.key
-                                            ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-600/20'
-                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800'
-                                            }`}
-                                    >
-                                        {tab.label}
-                                    </button>
-                                ))}
+                        {/* Specialized Knitting Types Selection */}
+                        <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 transition-colors space-y-3">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                                        <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                                        Specialized Knitting Types
+                                    </span>
+                                    {/* <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                        Select the knitting fabric types and capabilities this factory produces.
+                                    </p> */}
+                                </div>
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
+                                    {(data.knitting_types || []).length} Selected
+                                </span>
                             </div>
 
-                            {/* Department Content Area */}
-                            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 transition-colors">
-                                {activeDepartment === 'sewing' ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                                        <div>
-                                            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Number of Sewing Lines</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={data.production_capacities.sewing.no_of_lines}
-                                                onChange={e => handleSewingChange('no_of_lines', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Capacity Per Line (Per Day)</label>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                value={data.production_capacities.sewing.per_line_capacity}
-                                                onChange={e => handleSewingChange('per_line_capacity', e.target.value)}
-                                                className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-slate-600 dark:text-slate-400 mb-1 font-semibold">Calculated Total Daily Capacity</label>
-                                            <div className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-                                                {data.production_capacities.sewing.total_capacity_per_day.toLocaleString()} Pcs / Day
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 pt-1">
+                                {(knittingTypes || []).map(kt => {
+                                    const isSelected = (data.knitting_types || []).includes(kt.id);
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={kt.id}
+                                            onClick={() => toggleKnittingType(kt.id)}
+                                            className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs transition cursor-pointer ${
+                                                isSelected
+                                                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 dark:border-blue-700 text-blue-900 dark:text-blue-200 font-semibold shadow-xs'
+                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                                            }`}
+                                        >
+                                            <div className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 border transition ${
+                                                isSelected
+                                                    ? 'bg-blue-600 border-blue-600 text-white'
+                                                    : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950'
+                                            }`}>
+                                                {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                                             </div>
-                                        </div>
+                                            <div className="min-w-0">
+                                                <span className="truncate block text-xs">{kt.name}</span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Knitting Machinery Content Area */}
+                        <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 transition-colors">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <span className="text-xs font-bold text-slate-900 dark:text-white">
+                                            Knitting Machines
+                                        </span>
+                                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                                            {(data.production_capacities.knitting || []).length} machinery records registered
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => addMachineRow('knitting')}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition cursor-pointer"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        <span>Add Machine Row</span>
+                                    </button>
+                                </div>
+
+                                {(data.production_capacities.knitting || []).length === 0 ? (
+                                    <div className="py-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 text-xs">
+                                        No machines registered under knitting yet. Click "Add Machine Row" to register machine units.
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs text-slate-500 dark:text-slate-400">
-                                                {data.production_capacities[activeDepartment]?.length || 0} machine types registered
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => addMachineRow(activeDepartment)}
-                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 hover:bg-indigo-600 hover:text-white transition"
-                                            >
-                                                <Plus className="w-3.5 h-3.5" />
-                                                <span>Add Machine Entry</span>
-                                            </button>
-                                        </div>
-
-                                        {(data.production_capacities[activeDepartment] || []).length === 0 ? (
-                                            <div className="py-4 text-center text-slate-500 text-xs italic">
-                                                No machinery records added for this department yet. Click "Add Machine Entry" above.
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-2">
-                                                {(data.production_capacities[activeDepartment] || []).map((row, idx) => (
-                                                    <div key={row.id || idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-white dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs items-center shadow-xs">
-                                                        <div className="sm:col-span-2">
-                                                            <input
-                                                                type="text"
-                                                                value={row.machine_type}
-                                                                onChange={e => updateMachineRow(activeDepartment, idx, 'machine_type', e.target.value)}
-                                                                placeholder="Machine model or description"
-                                                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white"
-                                                            />
-                                                        </div>
-                                                        <div className="flex items-center gap-1">
-                                                            <input
-                                                                type="number"
-                                                                min="1"
-                                                                value={row.no_of_machine}
-                                                                onChange={e => updateMachineRow(activeDepartment, idx, 'no_of_machine', e.target.value)}
-                                                                className="w-20 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2 py-1.5 text-slate-900 dark:text-white font-mono text-center"
-                                                            />
-                                                            <span className="text-[11px] text-slate-500 dark:text-slate-400">units</span>
-                                                        </div>
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-semibold">
-                                                                {row.total_capacity_per_day} {row.unit_type}/day
-                                                            </span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => removeMachineRow(activeDepartment, idx)}
-                                                                className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-                                                            >
-                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        </div>
+                                        {(data.production_capacities.knitting || []).map((row, idx) => (
+                                            <div key={row.id || idx} className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-5 gap-3 items-center text-xs">
+                                                <div className="sm:col-span-2">
+                                                    <label className="block text-[11px] text-slate-500 mb-1">Machine Type</label>
+                                                    <select
+                                                        value={row.machine_type}
+                                                        onChange={e => updateMachineRow('knitting', idx, 'machine_type', e.target.value)}
+                                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                                                    >
+                                                        {machineTypes.filter(m => m.category === 'knitting').map(m => (
+                                                            <option key={m.id} value={m.name}>{m.name}</option>
+                                                        ))}
+                                                        <option value="Other">Other / Custom Machinery</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[11px] text-slate-500 mb-1">No. of Machines</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value={row.no_of_machine || ''}
+                                                        onChange={e => updateMachineRow('knitting', idx, 'no_of_machine', e.target.value)}
+                                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[11px] text-slate-500 mb-1">Daily Cap. / Machine</label>
+                                                    <div className="flex items-center gap-1">
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            value={row.capacity_per_machine || ''}
+                                                            onChange={e => updateMachineRow('knitting', idx, 'capacity_per_machine', e.target.value)}
+                                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                                                        />
+                                                        <span className="text-[10px] text-slate-400 font-mono shrink-0">{row.unit_type || 'Kg'}</span>
                                                     </div>
-                                                ))}
+                                                </div>
+                                                <div className="flex items-center justify-between sm:justify-end gap-2 pt-4 sm:pt-0">
+                                                    <div className="text-right">
+                                                        <span className="text-[10px] text-slate-400 block">Total Capacity</span>
+                                                        <span className="font-bold text-blue-600 dark:text-blue-400 text-xs">
+                                                            {row.total_capacity_per_day} {row.unit_type || 'Kg'}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeMachineRow('knitting', idx)}
+                                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition cursor-pointer"
+                                                        title="Delete row"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
                                             </div>
-                                        )}
+                                        ))}
                                     </div>
                                 )}
                             </div>
