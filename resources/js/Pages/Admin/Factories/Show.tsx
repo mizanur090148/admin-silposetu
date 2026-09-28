@@ -19,7 +19,8 @@ import {
     Calendar,
     ExternalLink,
     AlertCircle,
-    Edit3
+    Edit3,
+    PlusCircle
 } from 'lucide-react';
 import { FactoryMachine } from '@/types';
 
@@ -142,6 +143,17 @@ export default function Show({ user }: Props) {
                             <Edit3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                             <span>Edit Factory</span>
                         </Link>
+
+                        {factory?.id && (
+                            <Link
+                                href={route('admin.posts.create', { factory_id: factory.id })}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/20 transition cursor-pointer"
+                                title="Create a subcontract post on behalf of this factory"
+                            >
+                                <PlusCircle className="w-4 h-4" />
+                                <span>Post Subcontract</span>
+                            </Link>
+                        )}
 
                         {user.status === 'pending' && (
                             <button

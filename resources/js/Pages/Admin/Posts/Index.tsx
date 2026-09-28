@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { FileText, Search, Trash2, MapPin, Calendar, Building2 } from 'lucide-react';
+import { FileText, Search, Trash2, MapPin, Calendar, Building2, Plus } from 'lucide-react';
 import Pagination from '@/Components/Pagination';
 import { PaginatedData } from '@/types';
 
@@ -51,9 +51,17 @@ export default function Index({ posts, filters, totalPosts }: Props) {
                     <div>
                         <h1 className="text-xl font-black text-slate-900 dark:text-white">Subcontract Order Moderation</h1>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Monitor all marketplace subcontract orders and prevent spam. (Total: {totalPosts})
+                            Monitor and manage all marketplace subcontract orders. (Total: {totalPosts})
                         </p>
                     </div>
+
+                    <Link
+                        href={route('admin.posts.create')}
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/25 transition cursor-pointer self-start sm:self-auto"
+                    >
+                        <Plus className="w-4 h-4" />
+                        <span>Post for Factory</span>
+                    </Link>
                 </div>
 
                 {/* Search Toolbar */}
