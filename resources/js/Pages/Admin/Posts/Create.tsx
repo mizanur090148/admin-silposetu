@@ -260,73 +260,11 @@ export default function Create({ factories, knittingTypes, selectedFactoryId }: 
                         </div>
                     </div>
 
-                    {/* SECTION 2: Subcontract Post Type / Intent */}
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
-                        <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-                            <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                                2. Post Intent / Subcontract Type
-                            </h2>
-                            <p className="text-[11px] text-slate-400">
-                                Determine whether the factory is giving out work (Demand) or offering available capacity (Supply).
-                            </p>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <button
-                                type="button"
-                                onClick={() => setData('post_type', 'DEMAND')}
-                                className={`p-4 rounded-xl border text-left transition cursor-pointer flex items-start gap-3 ${
-                                    data.post_type === 'DEMAND'
-                                        ? 'bg-blue-50/80 dark:bg-blue-950/30 border-blue-500 text-blue-900 dark:text-blue-100 ring-2 ring-blue-500/20'
-                                        : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                                }`}
-                            >
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
-                                    data.post_type === 'DEMAND' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 border-slate-200 dark:border-slate-700'
-                                }`}>
-                                    <PlusCircle className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                                        DEMAND (Extra Order / Giving Subcontract)
-                                    </h3>
-                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                                        Factory has received buyer orders exceeding in-house capacity and wants partner factories to bid on producing the fabrics.
-                                    </p>
-                                </div>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setData('post_type', 'SUPPLY')}
-                                className={`p-4 rounded-xl border text-left transition cursor-pointer flex items-start gap-3 ${
-                                    data.post_type === 'SUPPLY'
-                                        ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-500 text-emerald-900 dark:text-emerald-100 ring-2 ring-emerald-500/20'
-                                        : 'bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
-                                }`}
-                            >
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
-                                    data.post_type === 'SUPPLY' ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 border-slate-200 dark:border-slate-700'
-                                }`}>
-                                    <Layers className="w-4 h-4" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                                        SUPPLY (Offering Idle Capacity)
-                                    </h3>
-                                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                                        Factory has idle machines and open production lines ready to take subcontract orders immediately.
-                                    </p>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* SECTION 3: Order Core Information */}
+                    {/* SECTION 2: Order Core Information */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
                         <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
                             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                                3. Order Information & Commercial Terms
+                                2. Order Information & Commercial Terms
                             </h2>
                             <span className="text-[11px] text-slate-400">Required fields marked with *</span>
                         </div>
@@ -491,7 +429,7 @@ export default function Create({ factories, knittingTypes, selectedFactoryId }: 
                         </div>
                     </div>
 
-                    {/* SECTION 4: Technical Specifications */}
+                    {/* SECTION 3: Technical Specifications */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
                         <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -499,7 +437,7 @@ export default function Create({ factories, knittingTypes, selectedFactoryId }: 
                                     <Cpu className="w-4 h-4" />
                                 </div>
                                 <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                                    4. Machinery & Fabric Specifications (Technical Specs)
+                                    3. Machinery & Fabric Specifications (Technical Specs)
                                 </h2>
                             </div>
                             <span className="text-[11px] text-slate-400">Helps factories match machinery</span>
@@ -589,11 +527,11 @@ export default function Create({ factories, knittingTypes, selectedFactoryId }: 
                         </div>
                     </div>
 
-                    {/* SECTION 5: Detailed Description & Work Scope */}
+                    {/* SECTION 4: Detailed Description & Work Scope */}
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
                         <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
                             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                                5. Detailed Description & Quality Terms <span className="text-rose-500">*</span>
+                                4. Detailed Description & Quality Terms <span className="text-rose-500">*</span>
                             </h2>
                             <span className="text-[11px] text-slate-400">Visible to bidding factories</span>
                         </div>
