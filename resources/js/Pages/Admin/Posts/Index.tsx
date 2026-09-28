@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { FileText, Search, Trash2, MapPin, Calendar, Building2, Plus } from 'lucide-react';
+import { FileText, Search, Trash2, MapPin, Calendar, Building2, Plus, Eye } from 'lucide-react';
 import Pagination from '@/Components/Pagination';
 import { PaginatedData } from '@/types';
 
@@ -94,39 +94,79 @@ export default function Index({ posts, filters, totalPosts }: Props) {
                                         <th className="py-2.5 px-3">Category</th>
                                         <th className="py-2.5 px-3">Factory</th>
                                         <th className="py-2.5 px-3">Target Quantity</th>
+                                        <th className="py-2.5 px-3">Status</th>
                                         <th className="py-2.5 px-3">Date</th>
-                                        <th className="py-2.5 px-4 text-right">Action</th>
+                                        <th className="py-2.5 px-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                                     {posts.data.map((post) => (
                                         <tr key={post.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
-                                            <td className="py-2 px-4 max-w-xs">
-                                                <div className="font-bold text-slate-900 dark:text-white text-xs line-clamp-1">{post.title}</div>
+                                            <td className="py-2.5 px-4 max-w-xs">
+                                                <Link
+                                                    href={route('admin.posts.show', post.id)}
+                                                    className="font-bold text-slate-900 dark:text-white text-xs line-clamp-1 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                                                >
+                                                    {post.title}
+                                                </Link>
                                                 <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
                                                     <MapPin className="w-3 h-3 text-slate-400 dark:text-slate-500" />
                                                     <span>{post.district}</span>
+                                                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                                                    <span className="font-mono text-[10px]">#SUB-{post.id}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-2 px-3">
+                                            <td className="py-2.5 px-3">
                                                 <span className="text-[10px] font-bold uppercase bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-500/20 dark:border-blue-500/30">
                                                     {post.category}
                                                 </span>
                                             </td>
-                                            <td className="py-2 px-3 text-slate-700 dark:text-slate-300">
+                                            <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                                 <div className="font-semibold">{post.factory?.business_name || post.user?.name}</div>
                                                 <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{post.user?.customer_id}</div>
                                             </td>
-                                            <td className="py-2 px-3 font-semibold text-slate-800 dark:text-slate-200">
+                                            <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-200">
                                                 {post.target_quantity?.toLocaleString()} {post.unit}
                                             </td>
-                                            <td className="py-2 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
+                                            <td className="py-2.5 px-3">
+                                                {post.status === 'open' && (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                        Open
+                                                    </span>
+                                                )}
+                                                {post.status === 'in_progress' && (
+                                                    <span className="text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20">
+                                                        In Progress
+                                                    </span>
+                                                )}
+                                                {post.status === 'completed' && (
+                                                    <span className="text-[10px] font-bold bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/20">
+                                                        Completed
+                                                    </span>
+                                                )}
+                                                {post.status === 'closed' && (
+                                                    <span className="text-[10px] font-bold bg-slate-500/10 text-slate-600 dark:text-slate-400 px-2 py-0.5 rounded-full border border-slate-500/20">
+                                                        Closed
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400 text-[11px]">
                                                 {new Date(post.created_at).toLocaleDateString()}
                                             </td>
-                                            <td className="py-2 px-4 text-right">
+                                            <td className="py-2.5 px-4 text-right space-x-1.5">
+                                                <Link
+                                                    href={route('admin.posts.show', post.id)}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/40 transition cursor-pointer"
+                                                    title="View Full Order Details"
+                                                >
+                                                    <Eye className="w-3.5 h-3.5" />
+                                                    <span>View</span>
+                                                </Link>
                                                 <button
                                                     onClick={() => handleDelete(post.id, post.title)}
-                                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-600 hover:text-white border border-rose-500/20 transition cursor-pointer"
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-600 hover:text-white border border-rose-500/20 transition cursor-pointer"
+                                                    title="Delete Order"
                                                 >
                                                     <Trash2 className="w-3.5 h-3.5" />
                                                     <span>Delete</span>

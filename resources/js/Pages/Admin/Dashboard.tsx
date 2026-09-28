@@ -249,12 +249,18 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {recentPosts.map((post) => (
-                        <div key={post.id} className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 flex items-start justify-between gap-3">
+                        <Link
+                            key={post.id}
+                            href={route('admin.posts.show', post.id)}
+                            className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 hover:border-blue-300 dark:hover:border-blue-700/60 hover:bg-white dark:hover:bg-slate-800 transition flex items-start justify-between gap-3 group cursor-pointer"
+                        >
                             <div className="space-y-1">
                                 <span className="text-[10px] font-bold uppercase bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 px-1.5 py-0.5 rounded">
                                     {post.category}
                                 </span>
-                                <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{post.title}</h3>
+                                <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
+                                    {post.title}
+                                </h3>
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
                                     Posted by: {post.factory?.business_name || post.user?.name} ({post.district})
                                 </p>
@@ -262,7 +268,7 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
                             <span className="text-[10px] text-slate-500 font-mono shrink-0">
                                 {post.target_quantity?.toLocaleString()} {post.unit}
                             </span>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </div>

@@ -20,7 +20,8 @@ import {
     ExternalLink,
     AlertCircle,
     Edit3,
-    PlusCircle
+    PlusCircle,
+    Eye
 } from 'lucide-react';
 import { FactoryMachine } from '@/types';
 
@@ -355,6 +356,68 @@ export default function Show({ user }: Props) {
                                     </span>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Section 4: Subcontract Orders & Demands */}
+                        <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm dark:shadow-none transition-colors">
+                            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                    <span>Subcontract Orders ({user.subcontract_posts?.length || 0})</span>
+                                </h2>
+                                {factory && (
+                                    <Link
+                                        href={route('admin.posts.create') + `?factory_id=${factory.id}`}
+                                        className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                                    >
+                                        <PlusCircle className="w-3.5 h-3.5" />
+                                        <span>Post for Factory</span>
+                                    </Link>
+                                )}
+                            </div>
+
+                            {(!user.subcontract_posts || user.subcontract_posts.length === 0) ? (
+                                <div className="py-6 text-center text-xs text-slate-400">
+                                    No subcontract orders published yet by this factory.
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {user.subcontract_posts.map((post: any) => (
+                                        <div
+                                            key={post.id}
+                                            className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-3 text-xs"
+                                        >
+                                            <div className="min-w-0 space-y-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[10px] font-bold uppercase bg-blue-500/10 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded">
+                                                        {post.category}
+                                                    </span>
+                                                    <span className="font-mono text-[10px] text-slate-400">#SUB-{post.id}</span>
+                                                    <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${
+                                                        post.status === 'open' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30' : 'bg-slate-500/10 text-slate-600 border-slate-500/30'
+                                                    }`}>
+                                                        {post.status}
+                                                    </span>
+                                                </div>
+                                                <div className="font-bold text-slate-900 dark:text-white truncate">
+                                                    {post.title}
+                                                </div>
+                                                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                                                    Target: {Number(post.target_quantity).toLocaleString()} {post.unit} • {post.target_rate ? `৳ ${post.target_rate} / ${post.unit}` : 'Negotiable'}
+                                                </div>
+                                            </div>
+
+                                            <Link
+                                                href={route('admin.posts.show', post.id)}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-700 dark:text-blue-300 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-900/40 transition shrink-0"
+                                            >
+                                                <Eye className="w-3.5 h-3.5" />
+                                                <span>View Order</span>
+                                            </Link>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
 

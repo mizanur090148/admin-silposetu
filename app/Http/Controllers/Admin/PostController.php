@@ -126,6 +126,47 @@ class PostController extends Controller
     }
 
     /**
+     * Display detailed subcontract post view with all specifications,
+     * factory profile details, and received quotations/bids.
+     */
+    public function show(int $id): Response
+    {
+        $post = SubcontractPost::with([
+            'user:id,name,customer_id,email,phone,status',
+            'factory.knittingTypes',
+            'quotations' => function ($q) {
+                $q->with([
+                    'bidderUser:id,name,customer_id,email,phone',
+                    'bidderFactory:id,user_id,business_name,logo,district,phone,email,is_verified,total_machines,daily_capacity,contact_person',
+                ])->latest();
+            },
+        ])->findOrFail($id);
+
+        return Inertia::render('Admin/Posts/Show', [
+            'post' => $post,
+        ]);
+    }
+
+    /**
+     * Update the moderation status of a subcontract post.
+     */
+    public function updateStatus(Request $request, int $id): RedirectResponse
+    {
+        $validated = $request->validate([
+            'status' => ['required', 'string', 'in:open,in_progress,completed,closed'],
+        ]);
+
+        $post = SubcontractPost::findOrFail($id);
+        $post->update([
+            'status' => $validated['status'],
+        ]);
+
+        $statusLabel = ucfirst(str_replace('_', ' ', $validated['status']));
+
+        return back()->with('success', "Order status has been updated to '{$statusLabel}'.");
+    }
+
+    /**
      * Delete/Remove a post as admin.
      */
     public function destroy(int $id): RedirectResponse
@@ -134,6 +175,7 @@ class PostController extends Controller
         $title = $post->title;
         $post->delete();
 
-        return back()->with('success', "Subcontract post '{$title}' has been deleted successfully.");
+        return redirect()->route('admin.posts.index')
+            ->with('success', "Subcontract post '{$title}' has been deleted successfully.");
     }
 }

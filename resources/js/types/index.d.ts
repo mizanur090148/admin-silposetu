@@ -138,3 +138,46 @@ export type PageProps<
     };
 };
 
+export interface Quotation {
+    id: number;
+    subcontract_post_id: number;
+    bidder_user_id: number;
+    bidder_factory_id?: number | null;
+    offered_unit_price: number | string;
+    offered_lead_days: number;
+    offered_total_cost?: number | string | null;
+    note?: string | null;
+    status: 'pending' | 'accepted' | 'rejected' | string;
+    created_at: string;
+    updated_at?: string;
+    bidder_user?: User;
+    bidder_factory?: Factory | null;
+}
+
+export interface SubcontractPost {
+    id: number;
+    user_id: number;
+    factory_id?: number | null;
+    post_type: 'DEMAND' | 'SUPPLY';
+    category: string;
+    title: string;
+    target_quantity: number;
+    unit: string;
+    target_rate?: number | string | null;
+    rate_negotiable: boolean;
+    deadline?: string | null;
+    district?: string | null;
+    address?: string | null;
+    description: string;
+    specs?: Record<string, any> | Array<any> | null;
+    tech_pack_file?: string | null;
+    product_images?: string[] | null;
+    is_urgent: boolean;
+    status: 'open' | 'in_progress' | 'completed' | 'closed' | string;
+    views_count: number;
+    created_at: string;
+    updated_at: string;
+    user?: User;
+    factory?: Factory | null;
+    quotations?: Quotation[];
+}
