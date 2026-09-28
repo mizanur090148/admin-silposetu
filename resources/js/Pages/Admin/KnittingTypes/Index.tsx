@@ -24,6 +24,7 @@ interface Props {
     filters: {
         search: string;
         status: string;
+        per_page?: number;
     };
     stats: {
         total: number;
@@ -92,6 +93,18 @@ export default function Index({
             {
                 ...filters,
                 status,
+                page: 1,
+            },
+            { preserveState: true }
+        );
+    };
+
+    const handlePerPageChange = (perPage: number) => {
+        router.get(
+            route('admin.knitting-types.index'),
+            {
+                ...filters,
+                per_page: perPage,
                 page: 1,
             },
             { preserveState: true }
@@ -175,42 +188,6 @@ export default function Index({
                             <Plus className="w-4 h-4" />
                             <span>Add Knitting Type</span>
                         </button>
-                    </div>
-                </div>
-
-                {/* Metric Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Total Types</span>
-                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                                <Layers className="w-4 h-4" />
-                            </div>
-                        </div>
-                        <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">{stats.total}</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Fabrics & knit classifications</p>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Active (Public)</span>
-                            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                <CheckCircle2 className="w-4 h-4" />
-                            </div>
-                        </div>
-                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">{stats.active}</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Visible on registration & filters</p>
-                    </div>
-
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-xs">
-                        <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Inactive (Hidden)</span>
-                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                                <AlertCircle className="w-4 h-4" />
-                            </div>
-                        </div>
-                        <p className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-2">{stats.inactive}</p>
-                        <p className="text-[11px] text-slate-400 mt-0.5">Draft or unlisted types</p>
                     </div>
                 </div>
 
@@ -345,12 +322,16 @@ export default function Index({
                         </table>
                     </div>
 
-                    {/* Pagination */}
-                    {knittingTypes.total > knittingTypes.per_page && (
-                        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
-                            <Pagination links={knittingTypes.links} />
-                        </div>
-                    )}
+                    {/* Server-Side Pagination */}
+                    <Pagination
+                        links={knittingTypes.links}
+                        from={knittingTypes.from}
+                        to={knittingTypes.to}
+                        total={knittingTypes.total}
+                        perPage={filters.per_page || knittingTypes.per_page}
+                        onPerPageChange={handlePerPageChange}
+                        itemName="knitting types"
+                    />
                 </div>
             </div>
 

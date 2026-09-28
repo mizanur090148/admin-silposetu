@@ -19,6 +19,10 @@ class KnittingTypeController extends Controller
     {
         $search = $request->input('search', '');
         $status = $request->input('status', 'all');
+        $perPage = (int) $request->input('per_page', 10);
+        if ($perPage < 5 || $perPage > 100) {
+            $perPage = 10;
+        }
 
         $query = KnittingType::withCount('factories');
 
@@ -39,7 +43,7 @@ class KnittingTypeController extends Controller
 
         $knittingTypes = $query->orderBy('sort_order')
             ->orderBy('name')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         $stats = [
@@ -53,6 +57,7 @@ class KnittingTypeController extends Controller
             'filters' => [
                 'search' => $search,
                 'status' => $status,
+                'per_page' => $perPage,
             ],
             'stats' => $stats,
         ]);
