@@ -617,9 +617,6 @@ export default function Show({ post }: Props) {
                                                             {quote.bidder_factory?.is_verified && (
                                                                 <ShieldCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                                                             )}
-                                                            <span className="text-[10px] text-slate-400 font-mono">
-                                                                ({quote.bidder_user?.customer_id || `U${quote.bidder_user_id}`})
-                                                            </span>
                                                         </div>
                                                         <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
                                                             <span>{quote.bidder_factory?.district || 'Bangladesh'}</span>
@@ -759,13 +756,6 @@ export default function Show({ post }: Props) {
                                             <Mail className="w-3 h-3 shrink-0" />
                                             <span className="truncate">{factory?.email || authorUser?.email || 'N/A'}</span>
                                         </a>
-                                    </div>
-
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-slate-400">Customer ID:</span>
-                                        <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
-                                            {authorUser?.customer_id || `S${authorUser?.id}`}
-                                        </span>
                                     </div>
 
                                     <div className="flex items-center justify-between">

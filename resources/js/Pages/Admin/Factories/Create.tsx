@@ -337,32 +337,6 @@ export default function Create({
                                 <p className="text-[10px] text-slate-500 mt-1">Default temporary password for first sign in</p>
                             </div>
 
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Customer ID
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.customer_id}
-                                    onChange={e => setData('customer_id', e.target.value)}
-                                    placeholder={suggestedCustomerId}
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-blue-600 dark:text-blue-400 font-mono font-bold focus:outline-none focus:border-blue-500"
-                                />
-                                <p className="text-[10px] text-slate-500 mt-1">Auto-assigned sequential ID</p>
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Owner NID Number
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.nid_number}
-                                    onChange={e => setData('nid_number', e.target.value)}
-                                    placeholder="e.g. 1984269102837482"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                />
-                            </div>
 
                             <div>
                                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">

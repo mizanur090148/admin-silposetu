@@ -17,9 +17,12 @@ use Illuminate\Support\Facades\Route;
 
 // Guest Admin Routes
 Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'create'])->name('admin.login');
+    Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->name('admin.login.store');
 });
+
+// Alias for backwards compatibility
+Route::get('/admin/login', fn () => redirect()->route('login'))->name('admin.login');
 
 // Authenticated Admin Routes
 Route::middleware(['auth', 'admin'])->group(function () {

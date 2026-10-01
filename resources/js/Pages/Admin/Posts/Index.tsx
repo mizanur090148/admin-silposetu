@@ -123,7 +123,6 @@ export default function Index({ posts, filters, totalPosts }: Props) {
                                             </td>
                                             <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                                 <div className="font-semibold">{post.factory?.business_name || post.user?.name}</div>
-                                                <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{post.user?.customer_id}</div>
                                             </td>
                                             <td className="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-200">
                                                 {post.target_quantity?.toLocaleString()} {post.unit}

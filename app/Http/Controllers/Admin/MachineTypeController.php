@@ -14,10 +14,6 @@ class MachineTypeController extends Controller
 {
     public const CATEGORIES = [
         'knitting' => 'Knitting Machinery',
-        'yarn_dyeing' => 'Yarn Dyeing Machinery',
-        'fabric_dyeing' => 'Fabric Dyeing Machinery',
-        'print' => 'Printing Machinery',
-        'embroidery' => 'Embroidery Machinery',
     ];
 
     public const DEFAULT_UNITS = [
@@ -33,7 +29,7 @@ class MachineTypeController extends Controller
      */
     public function index(Request $request): Response
     {
-        $category = $request->input('category', 'all');
+        $category = 'knitting';
         $search = $request->input('search', '');
         $perPage = (int) $request->input('per_page', 25);
         if ($perPage < 5 || $perPage > 100) {
@@ -42,34 +38,31 @@ class MachineTypeController extends Controller
 
         $query = MachineType::query();
 
-        if ($category !== 'all') {
-            $query->where('category', $category);
-        }
+        // Keep only Knitting Machinery by default
+        $query->where('category', 'knitting');
 
         if (! empty($search)) {
             $term = '%'.$search.'%';
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
-                    ->orWhere('brand_or_model', 'like', $term)
-                    ->orWhere('category', 'like', $term);
+                    ->orWhere('brand_or_model', 'like', $term);
             });
         }
 
-        $machineTypes = $query->orderBy('category')->orderBy('sort_order')->paginate($perPage)->withQueryString();
+        $machineTypes = $query->orderBy('sort_order')->paginate($perPage)->withQueryString();
 
-        $categoryCounts = [];
-        foreach (self::CATEGORIES as $key => $label) {
-            $categoryCounts[$key] = MachineType::where('category', $key)->count();
-        }
+        $categoryCounts = [
+            'knitting' => MachineType::where('category', 'knitting')->count(),
+        ];
 
         return Inertia::render('Admin/MachineTypes/Index', [
             'machineTypes' => $machineTypes,
             'categories' => self::CATEGORIES,
             'defaultUnits' => self::DEFAULT_UNITS,
             'categoryCounts' => $categoryCounts,
-            'totalCount' => MachineType::count(),
+            'totalCount' => $categoryCounts['knitting'],
             'filters' => [
-                'category' => $category,
+                'category' => 'knitting',
                 'search' => $search,
                 'per_page' => $perPage,
             ],
@@ -82,21 +75,22 @@ class MachineTypeController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'category' => ['required', 'string', 'in:'.implode(',', array_keys(self::CATEGORIES))],
+            'category' => ['nullable', 'string'],
             'name' => ['required', 'string', 'max:255'],
             'brand_or_model' => ['nullable', 'string', 'max:255'],
-            'default_unit' => ['required', 'string', 'max:50'],
+            'default_unit' => ['nullable', 'string', 'max:50'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
         ]);
 
-        $maxSort = MachineType::where('category', $validated['category'])->max('sort_order') ?? 0;
+        $category = 'knitting';
+        $maxSort = MachineType::where('category', $category)->max('sort_order') ?? 0;
 
         MachineType::create([
-            'category' => $validated['category'],
+            'category' => $category,
             'name' => $validated['name'],
             'brand_or_model' => $validated['brand_or_model'] ?? null,
-            'default_unit' => $validated['default_unit'] ?? 'Kg',
+            'default_unit' => ! empty($validated['default_unit']) ? $validated['default_unit'] : 'Kg',
             'sort_order' => $validated['sort_order'] ?? ($maxSort + 1),
             'is_active' => $request->boolean('is_active', true),
         ]);
@@ -112,19 +106,19 @@ class MachineTypeController extends Controller
         $machine = MachineType::findOrFail($id);
 
         $validated = $request->validate([
-            'category' => ['required', 'string', 'in:'.implode(',', array_keys(self::CATEGORIES))],
+            'category' => ['nullable', 'string'],
             'name' => ['required', 'string', 'max:255'],
             'brand_or_model' => ['nullable', 'string', 'max:255'],
-            'default_unit' => ['required', 'string', 'max:50'],
+            'default_unit' => ['nullable', 'string', 'max:50'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['boolean'],
         ]);
 
         $machine->update([
-            'category' => $validated['category'],
+            'category' => 'knitting',
             'name' => $validated['name'],
             'brand_or_model' => $validated['brand_or_model'] ?? null,
-            'default_unit' => $validated['default_unit'],
+            'default_unit' => ! empty($validated['default_unit']) ? $validated['default_unit'] : ($machine->default_unit ?? 'Kg'),
             'sort_order' => $validated['sort_order'] ?? $machine->sort_order,
             'is_active' => $request->boolean('is_active', $machine->is_active),
         ]);
@@ -175,9 +169,9 @@ class MachineTypeController extends Controller
 
             $samples = [
                 ['knitting', 'Single Jersey Circular Knitting Machine', 'Mayer & Cie / Fukuhara', 'Kg', '1', '1'],
-                ['fabric_dyeing', 'High Temperature Rapid Dyeing Jet', 'Thies / Sclavos', 'Kg', '2', '1'],
-                ['print', 'Automatic Oval Screen Printing Machine', 'MHM / ROQ', 'Pcs', '3', '1'],
-                ['embroidery', '20-Head Computerized Embroidery Machine', 'Tajima / Barudan', 'Pcs', '4', '1'],
+                ['knitting', 'Double Jersey Circular Knitting Machine', 'Terrot / Santoni', 'Kg', '2', '1'],
+                ['knitting', 'Flat Bed Computerized Knitting Machine', 'Shima Seiki / Stoll', 'Pcs', '3', '1'],
+                ['knitting', 'Rib Circular Knitting Machine', 'Pai Lung / Mayer & Cie', 'Kg', '4', '1'],
             ];
 
             foreach ($samples as $sample) {
@@ -230,10 +224,10 @@ class MachineTypeController extends Controller
             }
         }
 
-        if (! isset($headerMap['name']) || ! isset($headerMap['category'])) {
+        if (! isset($headerMap['name'])) {
             fclose($fileHandle);
 
-            return back()->with('error', "CSV must contain 'category' and 'name' columns.");
+            return back()->with('error', "CSV must contain 'name' column.");
         }
 
         $count = 0;
@@ -242,22 +236,11 @@ class MachineTypeController extends Controller
                 continue;
             }
 
-            $cat = strtolower(trim($row[$headerMap['category']] ?? ''));
+            $cat = 'knitting';
             $name = trim($row[$headerMap['name']] ?? '');
 
-            if (empty($cat) || empty($name)) {
+            if (empty($name)) {
                 continue;
-            }
-
-            // Normalize category
-            if (! array_key_exists($cat, self::CATEGORIES)) {
-                // Try fuzzy match
-                foreach (array_keys(self::CATEGORIES) as $validCat) {
-                    if (str_contains($cat, $validCat) || str_contains($validCat, $cat)) {
-                        $cat = $validCat;
-                        break;
-                    }
-                }
             }
 
             $brand = isset($headerMap['brand_or_model']) ? trim($row[$headerMap['brand_or_model']] ?? '') : null;

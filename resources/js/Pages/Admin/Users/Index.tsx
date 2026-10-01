@@ -167,7 +167,7 @@ export default function Index({ users, filters, stats }: Props) {
                         <table className="w-full text-left text-xs">
                             <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                 <tr>
-                                    <th className="py-2.5 px-4">User & ID</th>
+                                    <th className="py-2.5 px-4">User</th>
                                     <th className="py-2.5 px-3">Contact</th>
                                     <th className="py-2.5 px-3">Role</th>
                                     <th className="py-2.5 px-3">Status</th>
@@ -179,9 +179,6 @@ export default function Index({ users, filters, stats }: Props) {
                                     <tr key={user.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
                                         <td className="py-2.5 px-4">
                                             <div className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">{user.name}</div>
-                                            <div className="font-mono text-[11px] text-blue-600 dark:text-blue-400 font-semibold">
-                                                {user.customer_id || `S${user.id}`}
-                                            </div>
                                         </td>
                                         <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                             <div>{user.phone || 'No phone'}</div>
@@ -348,18 +345,6 @@ export default function Index({ users, filters, stats }: Props) {
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                        NID Number
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={addData.nid_number}
-                                        onChange={e => setAddData('nid_number', e.target.value)}
-                                        placeholder="Optional NID"
-                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500 transition"
-                                    />
-                                </div>
 
                                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                                     <button

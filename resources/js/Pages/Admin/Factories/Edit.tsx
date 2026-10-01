@@ -295,9 +295,6 @@ export default function Edit({
                                 <h1 className="text-xl font-black text-slate-900 dark:text-white">
                                     Edit Factory Profile
                                 </h1>
-                                <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 dark:border-blue-500/30">
-                                    ID: {user.customer_id || `S${user.id}`}
-                                </span>
                             </div>
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                                 Modify business identity, credentials, machinery capacity, and verification status.
@@ -406,32 +403,6 @@ export default function Edit({
                                 {errors.password && <p className="text-rose-500 text-[10px] mt-1">{errors.password}</p>}
                             </div>
 
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Custom Customer ID
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.customer_id}
-                                    onChange={e => setData('customer_id', e.target.value)}
-                                    placeholder="S2026xxxx"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-blue-600 dark:text-blue-400 font-mono font-bold focus:outline-none focus:border-blue-500"
-                                />
-                                {errors.customer_id && <p className="text-rose-500 text-[10px] mt-1">{errors.customer_id}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Owner NID Number
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.nid_number}
-                                    onChange={e => setData('nid_number', e.target.value)}
-                                    placeholder="e.g. 1984269102837482"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                />
-                            </div>
 
                             <div>
                                 <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">

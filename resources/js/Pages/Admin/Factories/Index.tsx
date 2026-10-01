@@ -227,7 +227,6 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                                 <thead className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                     <tr>
                                         <th className="py-2.5 px-4">Factory & Owner</th>
-                                        <th className="py-2.5 px-3">Customer ID</th>
                                         <th className="py-2.5 px-3">Contact</th>
                                         <th className="py-2.5 px-3">Capacity</th>
                                         <th className="py-2.5 px-3">Status</th>
@@ -267,9 +266,7 @@ export default function Index({ factories, counts, filters, districts }: Props) 
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="py-2.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400 text-xs">
-                                                    {user.customer_id || `S${user.id}`}
-                                                </td>
+
                                                 <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                                                     <div className="flex items-center gap-1.5">
                                                         <Phone className="w-3.5 h-3.5 text-slate-400" />

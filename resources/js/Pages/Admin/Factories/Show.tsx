@@ -130,7 +130,7 @@ export default function Show({ user }: Props) {
                                 )}
                             </div>
                             <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                                Customer ID: {user.customer_id || `S${user.id}`} • Registered Date: {new Date(user.created_at).toLocaleDateString()}
+                                Registered Date: {new Date(user.created_at).toLocaleDateString()}
                             </p>
                         </div>
                     </div>
@@ -438,10 +438,6 @@ export default function Show({ user }: Props) {
                                     <span className={`font-bold ${factory?.is_verified ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                                         {factory?.is_verified ? 'Yes (Verified)' : 'No (Pending)'}
                                     </span>
-                                </div>
-                                <div className="flex items-center justify-between">
-                                    <span className="text-slate-500 dark:text-slate-400">Customer ID:</span>
-                                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{user.customer_id || `S${user.id}`}</span>
                                 </div>
                             </div>
                         </div>

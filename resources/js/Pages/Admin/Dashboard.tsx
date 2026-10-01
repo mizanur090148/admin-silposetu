@@ -178,7 +178,6 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
                             <thead className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
                                 <tr>
                                     <th className="py-2 px-3">Factory & Owner</th>
-                                    <th className="py-2 px-3">Customer ID</th>
                                     <th className="py-2 px-3">Location</th>
                                     <th className="py-2 px-3">Status</th>
                                     <th className="py-2 px-3 text-right">Actions</th>
@@ -199,9 +198,6 @@ export default function Dashboard({ stats, recentPending, recentPosts }: Props) 
                                                     {item.phone}
                                                 </span>
                                             </div>
-                                        </td>
-                                        <td className="py-2 px-3 font-mono font-bold text-blue-600 dark:text-blue-400">
-                                            {item.customer_id || `S${item.id}`}
                                         </td>
                                         <td className="py-2 px-3 text-slate-700 dark:text-slate-300">
                                             <div className="flex items-center gap-1.5">

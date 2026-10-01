@@ -203,35 +203,15 @@ export default function Index({
                 {/* Category Pills Tabs */}
                 <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto text-xs">
                     <button
-                        onClick={() => handleCategoryFilter('all')}
-                        className={`px-3.5 py-2 rounded-xl font-bold transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                            filters.category === 'all'
-                                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
-                        }`}
+                        type="button"
+                        onClick={() => handleCategoryFilter('knitting')}
+                        className="px-3.5 py-2 rounded-xl font-bold transition shrink-0 cursor-pointer flex items-center gap-1.5 bg-blue-600 text-white shadow-md shadow-blue-600/20"
                     >
-                        <span>All Machinery</span>
-                        <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filters.category === 'all' ? 'bg-blue-700 dark:bg-blue-800 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'}`}>
-                            {totalCount}
+                        <span>Knitting Machinery</span>
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-700 dark:bg-blue-800 text-white">
+                            {categoryCounts['knitting'] ?? totalCount}
                         </span>
                     </button>
-
-                    {Object.entries(categories).map(([key, label]) => (
-                        <button
-                            key={key}
-                            onClick={() => handleCategoryFilter(key)}
-                            className={`px-3.5 py-2 rounded-xl font-bold transition shrink-0 cursor-pointer flex items-center gap-1.5 ${
-                                filters.category === key
-                                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900'
-                            }`}
-                        >
-                            <span>{label}</span>
-                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filters.category === key ? 'bg-indigo-700 dark:bg-indigo-800 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400'}`}>
-                                {categoryCounts[key] || 0}
-                            </span>
-                        </button>
-                    ))}
                 </div>
 
                 {/* Toolbar */}
@@ -242,7 +222,7 @@ export default function Index({
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Search machinery by model, brand, or name..."
+                            placeholder="Search knitting machinery by name..."
                             className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm transition"
                         />
                     </form>
@@ -253,7 +233,7 @@ export default function Index({
                     {machineTypes.data.length === 0 ? (
                         <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs flex flex-col items-center gap-2">
                             <Cpu className="w-10 h-10 text-slate-300 dark:text-slate-700" />
-                            <span>No machine types found in this category.</span>
+                            <span>No knitting machinery found.</span>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -262,8 +242,6 @@ export default function Index({
                                     <tr>
                                         <th className="py-2.5 px-4">Machine Name</th>
                                         <th className="py-2.5 px-3">Category</th>
-                                        <th className="py-2.5 px-3">Standard Brand / Model</th>
-                                        <th className="py-2.5 px-3">Unit</th>
                                         <th className="py-2.5 px-3">Sort Order</th>
                                         <th className="py-2.5 px-3">Status</th>
                                         <th className="py-2.5 px-4 text-right">Actions</th>
@@ -279,12 +257,6 @@ export default function Index({
                                                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 border border-indigo-200/60 dark:border-slate-700/60">
                                                     {categories[item.category] || item.category}
                                                 </span>
-                                            </td>
-                                            <td className="py-2 px-3 text-slate-600 dark:text-slate-300">
-                                                {item.brand_or_model || <span className="text-slate-400 dark:text-slate-600">N/A</span>}
-                                            </td>
-                                            <td className="py-2 px-3 font-mono font-medium text-emerald-600 dark:text-emerald-400">
-                                                {item.default_unit}
                                             </td>
                                             <td className="py-2 px-3 font-mono text-slate-500 dark:text-slate-400">
                                                 {item.sort_order}
@@ -392,44 +364,14 @@ export default function Index({
 
                                 <div>
                                     <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                        Brand / Reference Specs
+                                        Sort Order
                                     </label>
                                     <input
-                                        type="text"
-                                        value={addData.brand_or_model}
-                                        onChange={e => setAddData('brand_or_model', e.target.value)}
-                                        placeholder="e.g. Fukuhara / Mayer & Cie"
-                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
+                                        type="number"
+                                        value={addData.sort_order}
+                                        onChange={e => setAddData('sort_order', parseInt(e.target.value) || 0)}
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500 transition"
                                     />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                            Default Unit
-                                        </label>
-                                        <select
-                                            value={addData.default_unit}
-                                            onChange={e => setAddData('default_unit', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
-                                        >
-                                            {defaultUnits.map(u => (
-                                                <option key={u} value={u}>{u}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                            Sort Order
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={addData.sort_order}
-                                            onChange={e => setAddData('sort_order', parseInt(e.target.value) || 0)}
-                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500 transition"
-                                        />
-                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 pt-2">
@@ -522,47 +464,15 @@ export default function Index({
 
                                 <div>
                                     <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                        Brand / Reference Specs
+                                        Sort Order
                                     </label>
                                     <input
-                                        type="text"
-                                        value={editData.brand_or_model}
-                                        onChange={e => setEditData('brand_or_model', e.target.value)}
-                                        placeholder="e.g. Fukuhara / Mayer & Cie"
-                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
+                                        type="number"
+                                        value={editData.sort_order}
+                                        onChange={e => setEditData('sort_order', parseInt(e.target.value) || 0)}
+                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500 transition"
                                     />
-                                    {editErrors.brand_or_model && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.brand_or_model}</p>}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                            Default Unit
-                                        </label>
-                                        <select
-                                            value={editData.default_unit}
-                                            onChange={e => setEditData('default_unit', e.target.value)}
-                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition"
-                                        >
-                                            {defaultUnits.map(u => (
-                                                <option key={u} value={u}>{u}</option>
-                                            ))}
-                                        </select>
-                                        {editErrors.default_unit && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.default_unit}</p>}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                            Sort Order
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={editData.sort_order}
-                                            onChange={e => setEditData('sort_order', parseInt(e.target.value) || 0)}
-                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500 transition"
-                                        />
-                                        {editErrors.sort_order && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.sort_order}</p>}
-                                    </div>
+                                    {editErrors.sort_order && <p className="text-rose-600 dark:text-rose-400 text-[10px] mt-1">{editErrors.sort_order}</p>}
                                 </div>
 
                                 <div className="flex items-center gap-2 pt-2">

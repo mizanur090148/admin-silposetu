@@ -232,7 +232,6 @@ export default function Index({
                                     <th className="py-3 px-4">Knitting Type Name</th>
                                     <th className="py-3 px-4">Identifier / Slug</th>
                                     <th className="py-3 px-4">Description & Fabric Scope</th>
-                                    <th className="py-3 px-4 text-center">Factories</th>
                                     <th className="py-3 px-4 text-center">Status</th>
                                     <th className="py-3 px-4 text-right">Actions</th>
                                 </tr>
@@ -240,7 +239,7 @@ export default function Index({
                             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
                                 {knittingTypes.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={7} className="py-12 text-center text-slate-400">
+                                        <td colSpan={6} className="py-12 text-center text-slate-400">
                                             <Layers className="w-8 h-8 mx-auto mb-2 opacity-30" />
                                             <p className="text-sm font-semibold">No knitting types found</p>
                                             <p className="text-xs mt-1">Try changing filters or add a new knitting type.</p>
@@ -267,12 +266,6 @@ export default function Index({
                                                 <p className="line-clamp-2 leading-relaxed">
                                                     {type.description || <span className="text-slate-400 italic">No description provided</span>}
                                                 </p>
-                                            </td>
-                                            <td className="py-3.5 px-4 text-center">
-                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-500/10 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-500/20">
-                                                    <Building2 className="w-3 h-3" />
-                                                    <span>{type.factories_count || 0}</span>
-                                                </span>
                                             </td>
                                             <td className="py-3.5 px-4 text-center">
                                                 <button
