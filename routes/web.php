@@ -8,12 +8,19 @@ use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Artisan;
 
 /*
 |--------------------------------------------------------------------------
 | Admin Portal Routes
 |--------------------------------------------------------------------------
 */
+
+Route::get('/storage-link', function () {
+    Artisan::call('storage:link');
+
+    return Artisan::output();
+});
 
 // Guest Admin Routes
 Route::middleware('guest')->group(function () {

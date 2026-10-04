@@ -28,9 +28,15 @@ interface Props {
     defaultUnits: string[];
     categoryCounts: Record<string, number>;
     totalCount: number;
+    stats?: {
+        total: number;
+        active: number;
+        inactive: number;
+    };
     filters: {
         category: string;
         search: string;
+        status?: string;
         per_page?: number;
     };
 }
@@ -41,6 +47,7 @@ export default function Index({
     defaultUnits,
     categoryCounts,
     totalCount,
+    stats,
     filters,
 }: Props) {
     const [search, setSearch] = useState(filters.search || '');
@@ -54,7 +61,7 @@ export default function Index({
         name: '',
         brand_or_model: '',
         default_unit: 'Kg',
-        sort_order: 1,
+        sort_order: (stats?.total || totalCount || 0) + 1,
         is_active: true,
     });
 
@@ -91,6 +98,18 @@ export default function Index({
         }, { preserveState: true });
     };
 
+    const handleStatusFilter = (status: string) => {
+        router.get(
+            route('admin.machine-types.index'),
+            {
+                ...filters,
+                status,
+                page: 1,
+            },
+            { preserveState: true }
+        );
+    };
+
     const handleCategoryFilter = (cat: string) => {
         router.get(route('admin.machine-types.index'), {
             ...filters,
@@ -108,12 +127,12 @@ export default function Index({
     };
 
     const handleToggle = (id: number) => {
-        router.post(route('admin.machine-types.toggle', id));
+        router.post(route('admin.machine-types.toggle', id), {}, { preserveScroll: true });
     };
 
     const handleDelete = (id: number, name: string) => {
         if (confirm(`Are you sure you want to delete machine type '${name}'?`)) {
-            router.delete(route('admin.machine-types.destroy', id));
+            router.delete(route('admin.machine-types.destroy', id), { preserveScroll: true });
         }
     };
 
@@ -200,32 +219,35 @@ export default function Index({
                     </div>
                 </div>
 
-                {/* Category Pills Tabs */}
-                <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto text-xs">
-                    <button
-                        type="button"
-                        onClick={() => handleCategoryFilter('knitting')}
-                        className="px-3.5 py-2 rounded-xl font-bold transition shrink-0 cursor-pointer flex items-center gap-1.5 bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                    >
-                        <span>Knitting Machinery</span>
-                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-700 dark:bg-blue-800 text-white">
-                            {categoryCounts['knitting'] ?? totalCount}
-                        </span>
-                    </button>
-                </div>
-
-                {/* Toolbar */}
-                <div className="flex items-center justify-between gap-3">
-                    <form onSubmit={handleSearch} className="w-full sm:w-80 relative">
-                        <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                {/* Filter and Search Bar with Status Tabs like Knitting Types */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <form onSubmit={handleSearch} className="relative w-full sm:w-80">
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                         <input
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search knitting machinery by name..."
-                            className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 shadow-sm transition"
+                            className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:border-blue-500 text-slate-900 dark:text-white"
                         />
                     </form>
+
+                    <div className="flex items-center gap-1.5 self-start sm:self-auto">
+                        <span className="text-[11px] font-semibold text-slate-400 mr-1">Status:</span>
+                        {(['all', 'active', 'inactive'] as const).map((st) => (
+                            <button
+                                key={st}
+                                onClick={() => handleStatusFilter(st)}
+                                className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize transition cursor-pointer ${
+                                    (filters.status || 'all') === st
+                                        ? 'bg-blue-600 text-white shadow-xs'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                }`}
+                            >
+                                {st}
+                            </button>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Machine Types Table */}
@@ -233,7 +255,7 @@ export default function Index({
                     {machineTypes.data.length === 0 ? (
                         <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-xs flex flex-col items-center gap-2">
                             <Cpu className="w-10 h-10 text-slate-300 dark:text-slate-700" />
-                            <span>No knitting machinery found.</span>
+                            <span>No {filters.status && filters.status !== 'all' ? `${filters.status} ` : ''}knitting machinery found.</span>
                         </div>
                     ) : (
                         <div className="overflow-x-auto">

@@ -31,6 +31,7 @@ class MachineTypeController extends Controller
     {
         $category = 'knitting';
         $search = $request->input('search', '');
+        $status = $request->input('status', 'all');
         $perPage = (int) $request->input('per_page', 25);
         if ($perPage < 5 || $perPage > 100) {
             $perPage = 25;
@@ -38,7 +39,7 @@ class MachineTypeController extends Controller
 
         $query = MachineType::query();
 
-        // Keep only Knitting Machinery by default
+        // Keep only Knitting Machinery
         $query->where('category', 'knitting');
 
         if (! empty($search)) {
@@ -49,10 +50,22 @@ class MachineTypeController extends Controller
             });
         }
 
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+
         $machineTypes = $query->orderBy('sort_order')->paginate($perPage)->withQueryString();
 
+        $stats = [
+            'total' => MachineType::where('category', 'knitting')->count(),
+            'active' => MachineType::where('category', 'knitting')->where('is_active', true)->count(),
+            'inactive' => MachineType::where('category', 'knitting')->where('is_active', false)->count(),
+        ];
+
         $categoryCounts = [
-            'knitting' => MachineType::where('category', 'knitting')->count(),
+            'knitting' => $stats['total'],
         ];
 
         return Inertia::render('Admin/MachineTypes/Index', [
@@ -60,10 +73,12 @@ class MachineTypeController extends Controller
             'categories' => self::CATEGORIES,
             'defaultUnits' => self::DEFAULT_UNITS,
             'categoryCounts' => $categoryCounts,
-            'totalCount' => $categoryCounts['knitting'],
+            'totalCount' => $stats['total'],
+            'stats' => $stats,
             'filters' => [
                 'category' => 'knitting',
                 'search' => $search,
+                'status' => $status,
                 'per_page' => $perPage,
             ],
         ]);
