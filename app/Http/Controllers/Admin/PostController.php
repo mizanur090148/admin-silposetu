@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Factory;
 use App\Models\KnittingType;
 use App\Models\SubcontractPost;
+use App\Services\SubcontractMatchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -121,8 +122,16 @@ class PostController extends Controller
             'status' => 'open',
         ]);
 
+        // Automatically match relevant factories and send in-app + email notifications
+        $notifiedCount = app(SubcontractMatchService::class)->notifyMatchingFactories($post);
+
+        $successMsg = "Subcontract post '{$post->title}' published successfully for factory '{$factory->business_name}'.";
+        if ($notifiedCount > 0) {
+            $successMsg .= " ({$notifiedCount} matching factories notified via website & email).";
+        }
+
         return redirect()->route('admin.posts.index')
-            ->with('success', "Subcontract post '{$post->title}' published successfully for factory '{$factory->business_name}'.");
+            ->with('success', $successMsg);
     }
 
     /**
