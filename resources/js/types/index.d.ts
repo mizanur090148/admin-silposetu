@@ -36,6 +36,35 @@ export interface MachineType {
     sort_order: number;
 }
 
+export interface Machine {
+    id: number;
+    name: string;
+    machine_type_id: number;
+    machine_type?: MachineType;
+    cph: number | string;
+    unit?: string;
+    brand_or_model?: string | null;
+    serial_number?: string | null;
+    is_active: boolean;
+    sort_order: number;
+    created_by_id?: number | null;
+    created_by?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
+    updated_by_id?: number | null;
+    updated_by?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
+    notes?: string | null;
+    deleted_at?: string | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
 export interface Factory {
     id: number;
     user_id: number;

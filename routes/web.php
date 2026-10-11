@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FactoryController;
 use App\Http\Controllers\Admin\KnittingTypeController;
+use App\Http\Controllers\Admin\MachineController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Admin\UserController;
@@ -63,6 +64,15 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::match(['put', 'post'], '/machine-types/{id}', [MachineTypeController::class, 'update'])->where('id', '[0-9]+')->name('admin.machine-types.update');
     Route::post('/machine-types/{id}/toggle', [MachineTypeController::class, 'toggle'])->where('id', '[0-9]+')->name('admin.machine-types.toggle');
     Route::delete('/machine-types/{id}', [MachineTypeController::class, 'destroy'])->where('id', '[0-9]+')->name('admin.machine-types.destroy');
+
+    // Machines Master Data
+    Route::get('/machines', [MachineController::class, 'index'])->name('admin.machines.index');
+    Route::post('/machines', [MachineController::class, 'store'])->name('admin.machines.store');
+    Route::match(['put', 'post'], '/machines/{id}', [MachineController::class, 'update'])->where('id', '[0-9]+')->name('admin.machines.update');
+    Route::post('/machines/{id}/toggle', [MachineController::class, 'toggle'])->where('id', '[0-9]+')->name('admin.machines.toggle');
+    Route::delete('/machines/{id}', [MachineController::class, 'destroy'])->where('id', '[0-9]+')->name('admin.machines.destroy');
+    Route::post('/machines/{id}/restore', [MachineController::class, 'restore'])->where('id', '[0-9]+')->name('admin.machines.restore');
+    Route::delete('/machines/{id}/force', [MachineController::class, 'forceDelete'])->where('id', '[0-9]+')->name('admin.machines.forceDelete');
 
     // Knitting Types Master Data CRUD
     Route::get('/knitting-types', [KnittingTypeController::class, 'index'])->name('admin.knitting-types.index');

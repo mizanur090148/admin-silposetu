@@ -61,4 +61,12 @@ class MachineType extends Model
     {
         return $this->hasMany(FactoryMachine::class);
     }
+
+    /**
+     * Specific master machines under this machine type.
+     */
+    public function machines(): HasMany
+    {
+        return $this->hasMany(Machine::class);
+    }
 }

@@ -14,6 +14,7 @@ import {
     Shield,
     ChevronRight,
     Cpu,
+    Cog,
     Layers,
     Sun,
     Moon,
@@ -89,6 +90,12 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
             href: route('admin.machine-types.index'),
             icon: Cpu,
             active: route().current('admin.machine-types.*'),
+        },
+        {
+            name: 'Machines',
+            href: route('admin.machines.index'),
+            icon: Cog,
+            active: route().current('admin.machines.*'),
         },
         {
             name: 'Knitting Types',
