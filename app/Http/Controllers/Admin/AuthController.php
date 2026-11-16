@@ -12,21 +12,15 @@ use Inertia\Response;
 
 class AuthController extends Controller
 {
-    /**
-     * Show admin login view.
-     */
     public function create(): Response|RedirectResponse
     {
-        if (Auth::check() && Auth::user()->account_type === 'admin') {
+        if (Auth::check() && Auth::user()->role === 'admin' && Auth::user()->is_active) {
             return redirect()->route('admin.dashboard');
         }
 
         return Inertia::render('Admin/Auth/Login');
     }
 
-    /**
-     * Handle incoming admin login.
-     */
     public function store(Request $request): RedirectResponse
     {
         $credentials = $request->validate([
@@ -42,30 +36,28 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        if ($user->account_type !== 'admin') {
+        if ($user->role !== 'admin') {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('admin.login')->with('error', 'Access denied. Administrator credentials required.');
+            return redirect()->route('login')->with('error', 'Access denied. Administrator credentials required.');
         }
 
-        if ($user->status === 'suspended') {
+        if (! $user->is_active) {
             Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('admin.login')->with('error', 'Your administrator account has been suspended.');
+            return redirect()->route('login')->with('error', 'Your administrator account is inactive.');
         }
 
+        $user->update(['last_login_label' => now()->format('d M Y, h:i A')]);
         $request->session()->regenerate();
 
         return redirect()->intended(route('admin.dashboard'));
     }
 
-    /**
-     * Destroy admin authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::logout();
@@ -73,6 +65,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('admin.login')->with('success', 'You have been logged out successfully.');
+        return redirect()->route('login')->with('success', 'You have been logged out successfully.');
     }
 }

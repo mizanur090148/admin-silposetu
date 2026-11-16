@@ -1,271 +1,468 @@
 import React from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import {
-    Clock,
-    Factory,
-    FileText,
+    Building2,
+    Cpu,
     Users,
-    ShieldAlert,
-    CheckCircle2,
-    ArrowUpRight,
-    MapPin,
-    CheckCircle,
-    Phone,
+    Briefcase,
+    Radio,
+    PackageCheck,
+    FileSpreadsheet,
+    Store,
+    Handshake,
+    Megaphone,
+    UserSearch,
+    ArrowRight,
+    ClipboardList,
 } from 'lucide-react';
+import { Factory, FreeMachineRequest, SubcontractPost, SupplierRfq } from '@/types';
+import { ROLE_META } from '@/utils/labels';
 
-interface Props {
-    stats: {
-        pending_factories: number;
-        active_factories: number;
-        suspended_users: number;
-        total_posts: number;
-        total_quotations: number;
-        total_users: number;
-    };
-    recentPending: Array<any>;
-    recentPosts: Array<any>;
+interface DashboardStats {
+    total_users: number;
+    active_users: number;
+    users_by_role: Record<string, number>;
+    total_factories: number;
+    qr_enabled_factories: number;
+    configured_machines: number;
+    total_machines: number;
+    idle_machines: number;
+    running_machines: number;
+    down_machines: number;
+    broadcast_free_machines: number;
+    total_daily_capacity_kg: number;
+    total_posts: number;
+    open_posts: number;
+    work_offer_posts: number;
+    machine_available_posts: number;
+    total_quotations: number;
+    pending_quotations: number;
+    total_machine_requests: number;
+    new_machine_requests: number;
+    total_suppliers: number;
+    verified_suppliers: number;
+    total_rfqs: number;
+    new_rfqs: number;
+    total_vendors: number;
+    verified_vendors: number;
+    total_partners: number;
+    total_partner_commission_tk: number;
+    total_ads: number;
+    pending_ads: number;
+    active_ads: number;
+    total_jobs: number;
+    total_job_applications: number;
+    active_orders: number;
+    total_orders: number;
+    estimated_mrr_tk: number;
+    expiring_trials: number;
+    over_quota_factories: number;
+    plan_distribution: Record<string, number>;
+    total_knitted_kg: number;
+    total_qc_inspections: number;
+    pending_qc_signs: number;
+    total_challans: number;
+    unread_threads: number;
+    total_billed_tk: number;
+    total_collected_tk: number;
+    total_expenses_tk: number;
 }
 
-export default function Dashboard({ stats, recentPending, recentPosts }: Props) {
-    const handleQuickApprove = (userId: number, name: string) => {
-        if (confirm(`Are you sure you want to approve factory account '${name}'?`)) {
-            router.post(route('admin.factories.approve', userId));
-        }
-    };
+interface Props {
+    stats: DashboardStats;
+    recentFactories: Factory[];
+    recentPosts: SubcontractPost[];
+    recentMachineRequests: FreeMachineRequest[];
+    recentRfqs: SupplierRfq[];
+}
+
+export default function Dashboard({
+    stats,
+    recentFactories,
+    recentPosts,
+    recentMachineRequests,
+    recentRfqs,
+}: Props) {
+    const kpiCards = [
+        {
+            title: 'Total Users',
+            value: stats.total_users,
+            sub: `${stats.active_users} active accounts`,
+            icon: Users,
+            tone: 'text-blue-600 bg-blue-50 dark:bg-blue-950/60 dark:text-blue-400',
+            href: route('admin.users.index'),
+        },
+        {
+            title: 'Factories',
+            value: stats.total_factories,
+            sub: `${stats.qr_enabled_factories} QR enabled · ${stats.configured_machines} declared MCs`,
+            icon: Building2,
+            tone: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 dark:text-emerald-400',
+            href: route('admin.factories.index'),
+        },
+        {
+            title: 'Tracked Machines',
+            value: stats.total_machines,
+            sub: `${stats.idle_machines} idle · ${stats.running_machines} run · ${stats.broadcast_free_machines} free broadcast`,
+            icon: Cpu,
+            tone: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 dark:text-indigo-400',
+            href: route('admin.factory-machines.index'),
+        },
+        {
+            title: 'Subcontract Posts',
+            value: stats.total_posts,
+            sub: `${stats.open_posts} open · ${stats.total_quotations} bids`,
+            icon: Briefcase,
+            tone: 'text-amber-600 bg-amber-50 dark:bg-amber-950/60 dark:text-amber-400',
+            href: route('admin.posts.index'),
+        },
+        {
+            title: 'Machine Requests',
+            value: stats.total_machine_requests,
+            sub: `${stats.new_machine_requests} new awaiting action`,
+            icon: Radio,
+            tone: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/60 dark:text-cyan-400',
+            href: route('admin.free-machine-requests.index'),
+        },
+        {
+            title: 'Suppliers & RFQs',
+            value: `${stats.total_suppliers} / ${stats.total_rfqs}`,
+            sub: `${stats.verified_suppliers} verified · ${stats.new_rfqs} new RFQs`,
+            icon: PackageCheck,
+            tone: 'text-violet-600 bg-violet-50 dark:bg-violet-950/60 dark:text-violet-400',
+            href: route('admin.suppliers.index'),
+        },
+        {
+            title: 'Jobs & Applicants',
+            value: `${stats.total_jobs} / ${stats.total_job_applications}`,
+            sub: `${stats.total_ads} ads (${stats.pending_ads} pending)`,
+            icon: UserSearch,
+            tone: 'text-rose-600 bg-rose-50 dark:bg-rose-950/60 dark:text-rose-400',
+            href: route('admin.jobs.index'),
+        },
+        {
+            title: 'Factory Orders (ERP)',
+            value: stats.total_orders,
+            sub: `${stats.active_orders} running · ${stats.total_knitted_kg.toLocaleString()} kg knitted`,
+            icon: ClipboardList,
+            tone: 'text-slate-700 bg-slate-100 dark:bg-slate-800 dark:text-slate-300',
+            href: route('admin.orders.index'),
+        },
+    ];
 
     return (
-        <AdminLayout title="Dashboard">
-            <Head title="Admin Dashboard - Shilposetu" />
+        <AdminLayout title="Dashboard Overview">
+            <Head title="Dashboard" />
 
-            {/* Welcome Banner */}
-            <div className="bg-gradient-to-r from-blue-50 via-indigo-50/50 to-white dark:from-blue-900/40 dark:via-indigo-900/30 dark:to-slate-900/60 border border-blue-200/80 dark:border-blue-500/20 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm dark:shadow-none transition-colors">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                        <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Admin Control Center</h1>
-                        <span className="text-[11px] font-bold bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20 dark:border-blue-500/30">
-                            Live System
-                        </span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                        Verify factory registrations, review company KYC details, and monitor industrial subcontract orders.
-                    </p>
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {kpiCards.map((card) => {
+                        const Icon = card.icon;
+                        return (
+                            <Link
+                                key={card.title}
+                                href={card.href}
+                                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-blue-400 dark:hover:border-blue-600 transition-colors"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{card.title}</p>
+                                        <p className="mt-1.5 text-2xl font-bold text-slate-900 dark:text-white">{card.value}</p>
+                                    </div>
+                                    <div className={`p-2.5 rounded-xl ${card.tone}`}>
+                                        <Icon className="w-5 h-5" />
+                                    </div>
+                                </div>
+                                <p className="mt-3 text-[11px] text-slate-500 dark:text-slate-400">{card.sub}</p>
+                            </Link>
+                        );
+                    })}
                 </div>
 
-                {stats.pending_factories > 0 ? (
-                    <Link
-                        href={route('admin.factories.pending')}
-                        className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2.5 rounded-xl text-xs shadow-lg shadow-amber-500/20 transition self-start sm:self-auto cursor-pointer"
-                    >
-                        <Clock className="w-4 h-4 animate-pulse" />
-                        <span>{stats.pending_factories} Factories Pending Review</span>
-                        <ArrowUpRight className="w-4 h-4" />
-                    </Link>
-                ) : (
-                    <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold px-3.5 py-2 rounded-xl text-xs">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span>All Factories Verified</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Stat Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Card 1: Pending Approvals */}
-                <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 relative overflow-hidden shadow-sm dark:shadow-none transition-colors">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Pending Approvals</span>
-                        <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400">
-                            <Clock className="w-4 h-4" />
+                {/* Role & Ecosystem Strip */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Users by Role</h3>
+                        <div className="grid grid-cols-5 gap-2 text-center">
+                            {Object.entries(stats.users_by_role).map(([roleKey, count]) => {
+                                const meta = ROLE_META[roleKey] || { label: roleKey, badgeClass: 'bg-slate-100 text-slate-700' };
+                                return (
+                                    <div key={roleKey} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                                        <p className="text-lg font-bold text-slate-900 dark:text-white">{count}</p>
+                                        <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold ${meta.badgeClass}`}>
+                                            {meta.label}
+                                        </span>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-3xl font-black text-slate-900 dark:text-white">{stats.pending_factories}</span>
-                        <span className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Requires Action</span>
-                    </div>
-                    <Link
-                        href={route('admin.factories.pending')}
-                        className="mt-3 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                    >
-                        View Pending List <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
-                </div>
 
-                {/* Card 2: Active Verified Factories */}
-                <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 relative overflow-hidden shadow-sm dark:shadow-none transition-colors">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Active Factories</span>
-                        <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 dark:text-emerald-400">
-                            <Factory className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-3xl font-black text-slate-900 dark:text-white">{stats.active_factories}</span>
-                        <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Verified</span>
-                    </div>
-                    <Link
-                        href={route('admin.factories.index') + '?tab=active'}
-                        className="mt-3 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                    >
-                        View All Factories <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
-                </div>
-
-                {/* Card 3: Total Subcontract Posts */}
-                <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 relative overflow-hidden shadow-sm dark:shadow-none transition-colors">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Subcontract Orders</span>
-                        <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                            <FileText className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-3xl font-black text-slate-900 dark:text-white">{stats.total_posts}</span>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">({stats.total_quotations} Bids)</span>
-                    </div>
-                    <Link
-                        href={route('admin.posts.index')}
-                        className="mt-3 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                    >
-                        Moderate Posts <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
-                </div>
-
-                {/* Card 4: Suspended Users */}
-                <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 relative overflow-hidden shadow-sm dark:shadow-none transition-colors">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Suspended Users</span>
-                        <div className="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400">
-                            <ShieldAlert className="w-4 h-4" />
-                        </div>
-                    </div>
-                    <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-3xl font-black text-slate-900 dark:text-white">{stats.suspended_users}</span>
-                        <span className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold">Blocked</span>
-                    </div>
-                    <Link
-                        href={route('admin.users.index') + '?status=suspended'}
-                        className="mt-3 inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold"
-                    >
-                        Blocked List <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
-                </div>
-            </div>
-
-            {/* Pending Approvals Section */}
-            <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm dark:shadow-none transition-colors">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></div>
-                        <h2 className="text-base font-bold text-slate-900 dark:text-white">Pending Factory Verifications</h2>
-                    </div>
-                    <Link
-                        href={route('admin.factories.pending')}
-                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1"
-                    >
-                        View All ({stats.pending_factories}) <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
-                </div>
-
-                {recentPending.length === 0 ? (
-                    <div className="py-8 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
-                        <CheckCircle2 className="w-8 h-8 text-emerald-500/60 dark:text-emerald-500/40" />
-                        <span>No pending factory applications. All registrations are verified!</span>
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs">
-                            <thead className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider font-semibold">
-                                <tr>
-                                    <th className="py-2 px-3">Factory & Owner</th>
-                                    <th className="py-2 px-3">Location</th>
-                                    <th className="py-2 px-3">Status</th>
-                                    <th className="py-2 px-3 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60">
-                                {recentPending.map((item) => (
-                                    <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition">
-                                        <td className="py-2 px-3">
-                                            <div className="font-bold text-slate-900 dark:text-slate-100 text-xs sm:text-sm">
-                                                {item.factory?.business_name || item.name}
-                                            </div>
-                                            <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                                                <span>Owner: {item.name}</span>
-                                                <span>•</span>
-                                                <span className="flex items-center gap-1">
-                                                    <Phone className="w-3 h-3 text-slate-400" />
-                                                    {item.phone}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="py-2 px-3 text-slate-700 dark:text-slate-300">
-                                            <div className="flex items-center gap-1.5">
-                                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                                <span>{item.factory?.district || 'Gazipur'}</span>
-                                            </div>
-                                        </td>
-                                        <td className="py-2 px-3">
-                                            <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-md border border-amber-500/20">
-                                                <Clock className="w-3 h-3" />
-                                                Pending Review
-                                            </span>
-                                        </td>
-                                        <td className="py-2 px-3 text-right space-x-1.5">
-                                            <Link
-                                                href={route('admin.factories.show', item.id) + '?from=pending'}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition"
-                                            >
-                                                Review
-                                            </Link>
-                                            <button
-                                                onClick={() => handleQuickApprove(item.id, item.name)}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 shadow-sm transition cursor-pointer"
-                                            >
-                                                <CheckCircle className="w-3.5 h-3.5" />
-                                                Approve
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
-
-            {/* Recent Subcontract Posts */}
-            <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm dark:shadow-none transition-colors">
-                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
-                    <h2 className="text-base font-bold text-slate-900 dark:text-white">Recent Subcontract Orders</h2>
-                    <Link href={route('admin.posts.index')} className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1">
-                        View All Posts <ArrowUpRight className="w-3.5 h-3.5" />
-                    </Link>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {recentPosts.map((post) => (
-                        <Link
-                            key={post.id}
-                            href={route('admin.posts.show', post.id)}
-                            className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 hover:border-blue-300 dark:hover:border-blue-700/60 hover:bg-white dark:hover:bg-slate-800 transition flex items-start justify-between gap-3 group cursor-pointer"
-                        >
-                            <div className="space-y-1">
-                                <span className="text-[10px] font-bold uppercase bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 px-1.5 py-0.5 rounded">
-                                    {post.category}
-                                </span>
-                                <h3 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition">
-                                    {post.title}
-                                </h3>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                    Posted by: {post.factory?.business_name || post.user?.name} ({post.district})
-                                </p>
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Machine Utilization & Capacity</h3>
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                            <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40">
+                                <p className="text-lg font-bold text-blue-700 dark:text-blue-300">{stats.running_machines}</p>
+                                <p className="text-[10px] font-medium text-blue-600 dark:text-blue-400">Running</p>
                             </div>
-                            <span className="text-[10px] text-slate-500 font-mono shrink-0">
-                                {post.target_quantity?.toLocaleString()} {post.unit}
+                            <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40">
+                                <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{stats.idle_machines}</p>
+                                <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">Idle Free</p>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40">
+                                <p className="text-lg font-bold text-rose-700 dark:text-rose-300">{stats.down_machines}</p>
+                                <p className="text-[10px] font-medium text-rose-600 dark:text-rose-400">Down</p>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800">
+                                <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.total_daily_capacity_kg.toLocaleString()}</p>
+                                <p className="text-[10px] font-medium text-slate-500">kg/day</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-4">Ecosystem Summary</h3>
+                        <div className="space-y-2.5 text-xs">
+                            <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400"><Store className="w-4 h-4" /> Vendors</span>
+                                <span className="font-semibold">{stats.total_vendors} ({stats.verified_vendors} verified)</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400"><Handshake className="w-4 h-4" /> Partners</span>
+                                <span className="font-semibold">{stats.total_partners} (৳{stats.total_partner_commission_tk.toLocaleString()})</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400"><Megaphone className="w-4 h-4" /> Advertisements</span>
+                                <span className="font-semibold">{stats.active_ads} active / {stats.pending_ads} pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* SaaS Revenue & Floor ERP Oversight Strip (from KnitKhata telemetry) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">SaaS Plans & Trial Health</h3>
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                                Est. MRR: ৳{stats.estimated_mrr_tk.toLocaleString()}
                             </span>
-                        </Link>
-                    ))}
+                        </div>
+                        <div className="grid grid-cols-4 gap-2 text-center text-xs">
+                            {[
+                                { k: 's', name: 'Starter', price: '৳1k' },
+                                { k: 'g', name: 'Growth', price: '৳1.5k' },
+                                { k: 'p', name: 'Pro', price: '৳2.5k' },
+                                { k: 'e', name: 'Enterprise', price: '৳4k' },
+                            ].map((tier) => (
+                                <div key={tier.k} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60">
+                                    <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.plan_distribution?.[tier.k] ?? 0}</p>
+                                    <p className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">{tier.name}</p>
+                                    <p className="text-[10px] text-slate-400">{tier.price}/mo</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-xs pt-1">
+                            <Link
+                                href={route('admin.factories.index')}
+                                className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold"
+                            >
+                                {stats.expiring_trials} expiring trials (&le; 7d)
+                            </Link>
+                            <Link
+                                href={route('admin.factories.index')}
+                                className={`px-2.5 py-1 rounded-lg font-semibold ${
+                                    stats.over_quota_factories > 0
+                                        ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                                }`}
+                            >
+                                {stats.over_quota_factories} over machine quota
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Floor ERP & Financial Pulse</h3>
+                            <Link href={route('admin.bills.index')} className="text-xs font-semibold text-blue-600 hover:underline">
+                                Billing Hub
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                            <Link href={route('admin.orders.index')} className="p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 hover:ring-1 ring-blue-400">
+                                <p className="text-base font-bold text-blue-700 dark:text-blue-300">{stats.total_qc_inspections}</p>
+                                <p className="text-[10px] text-slate-500">QC ({stats.pending_qc_signs} unsigned)</p>
+                            </Link>
+                            <Link href={route('admin.orders.index')} className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 hover:ring-1 ring-emerald-400">
+                                <p className="text-base font-bold text-emerald-700 dark:text-emerald-300">{stats.total_challans}</p>
+                                <p className="text-[10px] text-slate-500">Challans</p>
+                            </Link>
+                            <Link href={route('admin.bills.index')} className="p-2.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 hover:ring-1 ring-indigo-400">
+                                <p className="text-base font-bold text-indigo-700 dark:text-indigo-300">৳{Math.round(stats.total_billed_tk).toLocaleString()}</p>
+                                <p className="text-[10px] text-slate-500">Billed ({Math.round(stats.total_collected_tk).toLocaleString()} paid)</p>
+                            </Link>
+                            <Link href={route('admin.threads.index')} className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 hover:ring-1 ring-amber-400">
+                                <p className="text-base font-bold text-amber-700 dark:text-amber-300">{stats.unread_threads}</p>
+                                <p className="text-[10px] text-slate-500">Unread Threads</p>
+                            </Link>
+                        </div>
+                        <p className="text-[11px] text-slate-500">
+                            Recorded factory operating expenses: <span className="font-semibold text-slate-800 dark:text-slate-200">৳{stats.total_expenses_tk.toLocaleString()}</span>
+                        </p>
+                    </div>
+                </div>
+
+                {/* Recent Activity Tables */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Factories</h3>
+                            <Link href={route('admin.factories.index')} className="text-xs font-medium text-blue-600 hover:text-blue-500 flex items-center gap-1">
+                                View all <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {recentFactories.length === 0 ? (
+                                <p className="p-6 text-xs text-slate-500 text-center">No factories registered yet.</p>
+                            ) : (
+                                recentFactories.map((factory) => (
+                                    <Link
+                                        key={factory.id}
+                                        href={route('admin.factories.show', factory.id)}
+                                        className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span className="px-1.5 py-0.5 text-[10px] font-mono font-semibold bg-slate-100 dark:bg-slate-800 rounded text-slate-600 dark:text-slate-300">
+                                                    {factory.code}
+                                                </span>
+                                                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{factory.name}</p>
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                {factory.area || 'No area'} · Plan: <span className="uppercase font-medium">{factory.plan_code}</span>
+                                            </p>
+                                        </div>
+                                        <div className="text-right text-xs shrink-0 ml-4">
+                                            <p className="font-semibold text-slate-900 dark:text-white">{factory.factory_machines_count ?? 0} tracked MCs</p>
+                                            <p className="text-[11px] text-slate-500">{factory.subcontract_orders_count ?? 0} orders</p>
+                                        </div>
+                                    </Link>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Subcontract Posts</h3>
+                            <Link href={route('admin.posts.index')} className="text-xs font-medium text-blue-600 hover:text-blue-500 flex items-center gap-1">
+                                View all <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {recentPosts.length === 0 ? (
+                                <p className="p-6 text-xs text-slate-500 text-center">No subcontract posts yet.</p>
+                            ) : (
+                                recentPosts.map((post) => (
+                                    <Link
+                                        key={post.id}
+                                        href={route('admin.posts.show', post.id)}
+                                        className="flex items-center justify-between px-5 py-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                    >
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <span
+                                                    className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${
+                                                        post.post_type === 'work_offer'
+                                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                                                            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+                                                    }`}
+                                                >
+                                                    {post.post_type === 'work_offer' ? 'Work Offer' : 'Machine Free'}
+                                                </span>
+                                                <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{post.title}</p>
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                {post.fabric_type} · {Number(post.quantity_kg).toLocaleString()} kg · {post.location || 'BD'}
+                                            </p>
+                                        </div>
+                                        <div className="text-right text-xs shrink-0 ml-4">
+                                            <p className="font-semibold text-slate-900 dark:text-white">{post.quotations_count ?? 0} bids</p>
+                                            <span className="text-[11px] uppercase font-medium text-slate-500">{post.status}</span>
+                                        </div>
+                                    </Link>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Free Machine Requests</h3>
+                            <Link href={route('admin.free-machine-requests.index')} className="text-xs font-medium text-blue-600 hover:text-blue-500 flex items-center gap-1">
+                                Manage <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {recentMachineRequests.length === 0 ? (
+                                <p className="p-6 text-xs text-slate-500 text-center">No machine requests yet.</p>
+                            ) : (
+                                recentMachineRequests.map((req) => (
+                                    <div key={req.id} className="flex items-center justify-between px-5 py-3.5">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                {req.request_no} · {req.fabrication}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {req.contact_person} ({req.party_code}) · {req.machines_needed} MCs ({req.spec_label})
+                                            </p>
+                                        </div>
+                                        <div className="text-right shrink-0 ml-4">
+                                            <p className="text-xs font-semibold">{Number(req.qty_kg).toLocaleString()} kg</p>
+                                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                                {req.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Supplier RFQs</h3>
+                            <Link href={route('admin.supplier-rfqs.index')} className="text-xs font-medium text-blue-600 hover:text-blue-500 flex items-center gap-1">
+                                Manage <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {recentRfqs.length === 0 ? (
+                                <p className="p-6 text-xs text-slate-500 text-center">No RFQs submitted yet.</p>
+                            ) : (
+                                recentRfqs.map((rfq) => (
+                                    <div key={rfq.id} className="flex items-center justify-between px-5 py-3.5">
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                                {rfq.rfq_no} · {rfq.item_name}
+                                            </p>
+                                            <p className="text-xs text-slate-500">
+                                                {rfq.factory?.name || rfq.factory_code} · Qty: {rfq.qty_label}
+                                            </p>
+                                        </div>
+                                        <div className="text-right shrink-0 ml-4">
+                                            <p className="text-xs font-medium text-slate-600 dark:text-slate-300">{rfq.quoted_price || 'Pending Quote'}</p>
+                                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                                {rfq.status}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
         </AdminLayout>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\SubcontractPostFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,75 +10,58 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SubcontractPost extends Model
 {
+    /** @use HasFactory<SubcontractPostFactory> */
     use HasFactory;
 
+    protected $table = 'subcontract_posts';
+
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [
         'user_id',
         'factory_id',
         'post_type',
-        'category',
         'title',
-        'target_quantity',
-        'unit',
-        'target_rate',
-        'rate_negotiable',
-        'deadline',
-        'district',
-        'address',
+        'fabric_type',
+        'gsm',
+        'dia',
+        'gauge',
+        'quantity_kg',
+        'target_rate_tk',
+        'yarn_count',
+        'location',
+        'delivery_deadline',
         'description',
-        'specs',
-        'tech_pack_file',
-        'product_images',
-        'is_urgent',
         'status',
-        'views_count',
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'target_quantity' => 'integer',
-            'target_rate' => 'decimal:2',
-            'rate_negotiable' => 'boolean',
-            'is_urgent' => 'boolean',
-            'deadline' => 'date',
-            'specs' => 'array',
-            'product_images' => 'array',
-            'views_count' => 'integer',
+            'dia' => 'integer',
+            'gauge' => 'integer',
+            'quantity_kg' => 'decimal:2',
+            'target_rate_tk' => 'decimal:2',
+            'delivery_deadline' => 'date:Y-m-d',
         ];
     }
 
-    /**
-     * Post author user.
-     */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Associated factory/plant.
-     */
     public function factory(): BelongsTo
     {
-        return $this->belongsTo(Factory::class);
+        return $this->belongsTo(Factory::class, 'factory_id');
     }
 
-    /**
-     * Quotations received on this post.
-     */
     public function quotations(): HasMany
     {
-        return $this->hasMany(Quotation::class);
+        return $this->hasMany(Quotation::class, 'subcontract_post_id');
     }
 }

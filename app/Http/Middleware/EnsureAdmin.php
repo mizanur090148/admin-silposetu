@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureAdmin
@@ -16,23 +17,23 @@ class EnsureAdmin
         $user = $request->user();
 
         if (! $user) {
-            return redirect()->route('admin.login');
+            return redirect()->route('login');
         }
 
-        if ($user->account_type !== 'admin') {
-            auth()->logout();
+        if ($user->role !== 'admin') {
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('admin.login')->with('error', 'Access denied. Administrator credentials required.');
+            return redirect()->route('login')->with('error', 'Access denied. Administrator credentials required.');
         }
 
-        if ($user->status === 'suspended') {
-            auth()->logout();
+        if (! $user->is_active) {
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()->route('admin.login')->with('error', 'Your administrator account has been suspended.');
+            return redirect()->route('login')->with('error', 'Your administrator account is inactive.');
         }
 
         return $next($request);

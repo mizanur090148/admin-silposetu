@@ -2,65 +2,56 @@
 
 namespace App\Models;
 
+use Database\Factories\FactoryMachineFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FactoryMachine extends Model
 {
+    /** @use HasFactory<FactoryMachineFactory> */
     use HasFactory;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = 'factory_machines';
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [
         'factory_id',
-        'machine_type_id',
-        'category',
-        'no_of_machine',
-        'capacity_per_machine',
-        'total_capacity_per_day',
-        'unit_type',
-        'sort_order',
+        'code',
+        'knit_type',
+        'dia',
+        'gauge',
+        'spec_label',
+        'brand',
+        'status',
+        'current_order_no',
+        'broadcast_free',
+        'free_from',
+        'daily_capacity_kg',
+        'rate_label',
+        'supported_fabrics_json',
+        'note',
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'no_of_machine' => 'integer',
-            'capacity_per_machine' => 'decimal:2',
-            'total_capacity_per_day' => 'decimal:2',
-            'sort_order' => 'integer',
+            'dia' => 'integer',
+            'gauge' => 'integer',
+            'broadcast_free' => 'boolean',
+            'free_from' => 'date:Y-m-d',
+            'daily_capacity_kg' => 'integer',
+            'supported_fabrics_json' => 'array',
         ];
     }
 
-    /**
-     * Factory associated with this machine assignment.
-     */
     public function factory(): BelongsTo
     {
-        return $this->belongsTo(Factory::class);
-    }
-
-    /**
-     * Master machine type details (name, brand/model, standard specs).
-     */
-    public function machineType(): BelongsTo
-    {
-        return $this->belongsTo(MachineType::class);
+        return $this->belongsTo(Factory::class, 'factory_id');
     }
 }

@@ -19,12 +19,8 @@ class EnsureAccountIsActive
             return redirect()->route('login');
         }
 
-        if ($user->status === 'suspended') {
-            return back()->with('error', 'Your account has been suspended. Please contact platform administration for assistance.');
-        }
-
-        if ($user->status === 'pending') {
-            return back()->with('error', 'Your factory account is currently pending admin review. You can create posts once approved.');
+        if (! $user->is_active) {
+            return back()->with('error', 'Your account is currently inactive. Please contact platform administration for assistance.');
         }
 
         return $next($request);

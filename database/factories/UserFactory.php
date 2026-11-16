@@ -12,34 +12,48 @@ use Illuminate\Support\Str;
  */
 class UserFactory extends Factory
 {
-    /**
-     * The current password being used by the factory.
-     */
     protected static ?string $password;
 
     /**
-     * Define the model's default state.
-     *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
         return [
             'name' => fake()->name(),
+            'phone' => '017'.fake()->unique()->numerify('########'),
             'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
+            'role' => 'fac',
+            'designation' => 'Factory Staff',
+            'organization_name' => fake()->company(),
+            'is_owner' => false,
+            'is_vendor_rep' => false,
+            'can_message' => true,
+            'is_active' => true,
+            'phone_verified_at' => now(),
+            'subscription_plan' => 'free',
+            'billing_cycle' => 'm',
             'remember_token' => Str::random(10),
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function admin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+        return $this->state(fn (array $attributes): array => [
+            'role' => 'admin',
+            'designation' => 'System Administrator',
+            'organization_name' => 'ShilpoSetu HQ',
+            'is_owner' => true,
+            'is_active' => true,
+            'subscription_plan' => 'pro',
+        ]);
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'is_active' => false,
         ]);
     }
 }

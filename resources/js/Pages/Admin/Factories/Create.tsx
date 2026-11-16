@@ -1,805 +1,411 @@
-import React, { useState, useRef } from 'react';
+import React, { FormEvent } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import {
-    ArrowLeft,
-    Building2,
-    User as UserIcon,
-    Shield,
-    Layers,
-    FileText,
-    Upload,
-    Check,
-    Plus,
-    Trash2,
-    Sparkles,
-    KeyRound,
-    Cpu,
-    Scissors,
-    Phone,
-    Mail,
-    MapPin,
-    AlertCircle,
-    Info,
-    HelpCircle,
-    BadgeCheck,
-    X,
-    Image as ImageIcon
-} from 'lucide-react';
-import { MachineType, NonSewingMachineRow, SewingCapacity, KnittingType } from '@/types';
+import SearchableSelect from '@/Components/SearchableSelect';
+import { ArrowLeft, Plus, Trash2, Save, Cpu } from 'lucide-react';
+import { UserRef } from '@/types';
 
 interface Props {
-    machineTypes: MachineType[];
-    knittingTypes?: KnittingType[];
-    districts: string[];
-    industryTypes: string[];
-    suggestedCustomerId: string;
+    owners: UserRef[];
+    suggestedCode: string;
 }
 
-export default function Create({
-    machineTypes,
-    knittingTypes = [],
-    districts,
-    industryTypes,
-    suggestedCustomerId
-}: Props) {
-    const logoInputRef = useRef<HTMLInputElement>(null);
-    const [logoPreview, setLogoPreview] = useState<string | null>(null);
+interface InlineMachineForm {
+    code: string;
+    knit_type: 'c' | 'f';
+    dia: string;
+    gauge: string;
+    spec_label: string;
+    brand: string;
+    status: string;
+    daily_capacity_kg: string;
+    rate_label: string;
+    supported_fabrics: string;
+    broadcast_free: boolean;
+}
 
-    const { data, setData, post, processing, errors, reset } = useForm<{
+export default function Create({ owners, suggestedCode }: Props) {
+    const { data, setData, post, processing, errors } = useForm<{
+        code: string;
         name: string;
-        phone: string;
-        email: string;
-        password: string;
-        customer_id: string;
-        nid_number: string;
-        status: string;
-        is_subscribed: boolean;
-        business_name: string;
-        logo: File | null;
-        industry_type: string;
-        contact_person: string;
-        factory_phone: string;
-        factory_email: string;
-        district: string;
+        area: string;
         address: string;
-        total_machines: number | string;
-        daily_capacity: string;
-        is_verified: boolean;
-        knitting_types: number[];
-        production_capacities: {
-            sewing?: SewingCapacity;
-            knitting: NonSewingMachineRow[];
-            yarn_dyeing?: NonSewingMachineRow[];
-            fabric_dyeing?: NonSewingMachineRow[];
-            print?: NonSewingMachineRow[];
-            embroidery?: NonSewingMachineRow[];
-            [key: string]: any;
-        };
-        trade_license_no: string;
-        tin_no: string;
-        bin_no: string;
-        trade_license_file: File | null;
-        tin_file: File | null;
-        bin_file: File | null;
-        nid_file: File | null;
+        phone: string;
+        owner_id: string;
+        total_machines: number;
+        plan_code: string;
+        billing_cycle: 'm' | 'y';
+        trial_ends_at: string;
+        qr_sticker_enabled: boolean;
+        yearly_orders_count: number;
+        ontime_delivery_pct: string;
+        qc_reject_pct: string;
+        machines: InlineMachineForm[];
     }>({
+        code: suggestedCode,
         name: '',
-        phone: '',
-        email: '',
-        password: 'Shilpo@2026',
-        customer_id: suggestedCustomerId || '',
-        nid_number: '',
-        status: 'active',
-        is_subscribed: true,
-        business_name: '',
-        logo: null,
-        industry_type: industryTypes[0] || 'Apparel & Garments',
-        contact_person: '',
-        factory_phone: '',
-        factory_email: '',
-        district: districts[0] || 'Gazipur',
+        area: '',
         address: '',
-        total_machines: '',
-        daily_capacity: '',
-        is_verified: true,
-        knitting_types: [],
-        production_capacities: {
-            knitting: [],
-        },
-        trade_license_no: '',
-        tin_no: '',
-        bin_no: '',
-        trade_license_file: null,
-        tin_file: null,
-        bin_file: null,
-        nid_file: null,
+        phone: '',
+        owner_id: '',
+        total_machines: 24,
+        plan_code: 'g',
+        billing_cycle: 'm',
+        trial_ends_at: '',
+        qr_sticker_enabled: true,
+        yearly_orders_count: 14,
+        ontime_delivery_pct: '93.00',
+        qc_reject_pct: '0.60',
+        machines: [],
     });
 
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files ? e.target.files[0] : null;
-        if (file) {
-            setData('logo', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setLogoPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setData('logo', null);
-            setLogoPreview(null);
-        }
+    const addMachineRow = () => {
+        const idx = data.machines.length + 1;
+        setData('machines', [
+            ...data.machines,
+            {
+                code: `M-${String(idx).padStart(2, '0')}`,
+                knit_type: 'c',
+                dia: '30',
+                gauge: '24',
+                spec_label: '30" × 24G',
+                brand: 'Pailung',
+                status: 'idle',
+                daily_capacity_kg: '190',
+                rate_label: '৳১৩–১৫ / kg',
+                supported_fabrics: 'Single Jersey, 1×1 Rib',
+                broadcast_free: false,
+            },
+        ]);
     };
 
-    const removeLogo = () => {
-        setData('logo', null);
-        setLogoPreview(null);
-        if (logoInputRef.current) {
-            logoInputRef.current.value = '';
-        }
+    const removeMachineRow = (index: number) => {
+        setData(
+            'machines',
+            data.machines.filter((_, idx) => idx !== index)
+        );
     };
 
-    // Non-sewing machinery helpers
-    const addMachineRow = (category: 'knitting' | 'yarn_dyeing' | 'fabric_dyeing' | 'print' | 'embroidery') => {
-        const catMachines = machineTypes.filter(m => m.category === category);
-        const defaultMachine = catMachines[0];
-
-        const newRow: NonSewingMachineRow = {
-            id: Math.random().toString(36).substring(7),
-            machine_type: defaultMachine?.name || 'Standard Machine',
-            machine_type_id: defaultMachine?.id || null,
-            no_of_machine: 5,
-            capacity_per_machine: 100,
-            total_capacity_per_day: 500,
-            unit_type: defaultMachine?.default_unit || 'Kg',
-        };
-
-        const updatedRows = [...(data.production_capacities[category] || []), newRow];
-        setData('production_capacities', {
-            ...data.production_capacities,
-            [category]: updatedRows,
-        });
+    const updateMachineRow = (index: number, field: keyof InlineMachineForm, value: string | boolean) => {
+        const updated = [...data.machines];
+        updated[index] = { ...updated[index], [field]: value };
+        setData('machines', updated);
     };
 
-    const updateMachineRow = (
-        category: 'knitting' | 'yarn_dyeing' | 'fabric_dyeing' | 'print' | 'embroidery',
-        index: number,
-        field: keyof NonSewingMachineRow,
-        val: any
-    ) => {
-        const rows = [...(data.production_capacities[category] || [])];
-        const row = { ...rows[index], [field]: val };
-
-        if (field === 'machine_type') {
-            const found = machineTypes.find(m => m.name === val && m.category === category);
-            if (found) {
-                row.machine_type_id = found.id;
-                row.unit_type = found.default_unit;
-            }
-        }
-
-        const count = Number(row.no_of_machine) || 0;
-        const cap = Number(row.capacity_per_machine) || 0;
-        row.total_capacity_per_day = count * cap;
-
-        rows[index] = row;
-        setData('production_capacities', {
-            ...data.production_capacities,
-            [category]: rows,
-        });
-    };
-
-    const removeMachineRow = (
-        category: 'knitting' | 'yarn_dyeing' | 'fabric_dyeing' | 'print' | 'embroidery',
-        index: number
-    ) => {
-        const rows = [...(data.production_capacities[category] || [])];
-        rows.splice(index, 1);
-        setData('production_capacities', {
-            ...data.production_capacities,
-            [category]: rows,
-        });
-    };
-
-    const toggleKnittingType = (id: number) => {
-        const current = data.knitting_types || [];
-        if (current.includes(id)) {
-            setData('knitting_types', current.filter(item => item !== id));
-        } else {
-            setData('knitting_types', [...current, id]);
-        }
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
+    const submit = (e: FormEvent) => {
         e.preventDefault();
-        post(route('admin.factories.store'), {
-            forceFormData: true,
-        });
+        post(route('admin.factories.store'));
     };
 
     return (
-        <AdminLayout title="Add New Factory">
-            <Head title="Add New Factory - Shilposetu Admin" />
+        <AdminLayout title="Create Factory">
+            <Head title="Create Factory" />
 
-            <div className="space-y-6 max-w-5xl mx-auto">
-                {/* Top Navigation & Breadcrumb */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
-                    <div className="flex items-center gap-3">
-                        <Link
-                            href={route('admin.factories.index')}
-                            className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition shadow-xs"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                        </Link>
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-xl font-black text-slate-900 dark:text-white">Create New Factory</h1>
-                                <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400 px-2 py-0.5 rounded border border-blue-500/20 dark:border-blue-500/30">
-                                    Manual Form
-                                </span>
-                            </div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Register a manufacturing unit, establish login credentials, capacities, and compliance records.
-                            </p>
-                        </div>
-                    </div>
+            <div className="max-w-5xl mx-auto space-y-6">
+                <Link
+                    href={route('admin.factories.index')}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                >
+                    <ArrowLeft className="w-4 h-4" /> Back to Factories
+                </Link>
 
-                    <div className="flex items-center gap-2 self-start sm:self-auto">
-                        <Link
-                            href={route('admin.factories.import')}
-                            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 transition shadow-xs"
-                        >
-                            <Upload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                            <span>Bulk Upload (CSV) Instead</span>
-                        </Link>
-                    </div>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* SECTION 1: OWNER & ACCOUNT CREDENTIALS */}
-                    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-4 transition-colors">
-                        <div className="flex items-center gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800/80">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-                                <UserIcon className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">1. Owner Account & Login Credentials</h2>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">The primary user account the factory owner will use to sign in.</p>
-                            </div>
-                        </div>
+                <form onSubmit={submit} className="space-y-6">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-5">
+                        <h2 className="text-base font-bold text-slate-900 dark:text-white">Factory Profile & Subscription</h2>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                             <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Contact Person / Owner Name <span className="text-rose-500">*</span>
-                                </label>
+                                <label className="block font-semibold mb-1">Factory Code *</label>
                                 <input
                                     type="text"
+                                    value={data.code}
+                                    onChange={(e) => setData('code', e.target.value)}
                                     required
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono"
+                                />
+                                {errors.code && <p className="text-rose-500 mt-1">{errors.code}</p>}
+                            </div>
+
+                            <div className="sm:col-span-2">
+                                <label className="block font-semibold mb-1">Factory Name *</label>
+                                <input
+                                    type="text"
                                     value={data.name}
-                                    onChange={e => setData('name', e.target.value)}
-                                    placeholder="e.g. Mohammad Tanvir Rahman"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                />
-                                {errors.name && <p className="text-rose-500 text-[10px] mt-1">{errors.name}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Mobile / Phone <span className="text-rose-500">*</span>
-                                </label>
-                                <div className="relative">
-                                    <Phone className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    <input
-                                        type="text"
-                                        required
-                                        value={data.phone}
-                                        onChange={e => setData('phone', e.target.value)}
-                                        placeholder="017xxxxxxxx"
-                                        className="w-full pl-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                    />
-                                </div>
-                                {errors.phone && <p className="text-rose-500 text-[10px] mt-1">{errors.phone}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Email Address <span className="text-rose-500">*</span>
-                                </label>
-                                <div className="relative">
-                                    <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    <input
-                                        type="email"
-                                        required
-                                        value={data.email}
-                                        onChange={e => setData('email', e.target.value)}
-                                        placeholder="owner@factory.com"
-                                        className="w-full pl-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                    />
-                                </div>
-                                {errors.email && <p className="text-rose-500 text-[10px] mt-1">{errors.email}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Password
-                                </label>
-                                <div className="relative">
-                                    <KeyRound className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    <input
-                                        type="text"
-                                        value={data.password}
-                                        onChange={e => setData('password', e.target.value)}
-                                        placeholder="Default: Shilpo@2026"
-                                        className="w-full pl-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                                    />
-                                </div>
-                                <p className="text-[10px] text-slate-500 mt-1">Default temporary password for first sign in</p>
-                            </div>
-
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Account Status
-                                </label>
-                                <select
-                                    value={data.status}
-                                    onChange={e => setData('status', e.target.value)}
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                                >
-                                    <option value="active">Active (Instant Access)</option>
-                                    <option value="pending">Pending Admin KYC Review</option>
-                                    <option value="suspended">Suspended / Inactive</option>
-                                </select>
-                            </div>
-
-                            <div className="flex items-center gap-3 pt-6">
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.is_subscribed}
-                                        onChange={e => setData('is_subscribed', e.target.checked)}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-9 h-5 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
-                                    <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300">Active Paid Subscription</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* SECTION 2: FACTORY BUSINESS PROFILE */}
-                    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-4 transition-colors">
-                        <div className="flex items-center gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800/80">
-                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center border border-blue-500/20">
-                                <Building2 className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">2. Factory Identity & Location</h2>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Business registration name, manufacturing classification, and address.</p>
-                            </div>
-                        </div>
-
-                        {/* Factory Logo Upload (Optional / Not Mandatory) */}
-                        <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 rounded-xl border border-slate-200 dark:border-slate-800">
-                            <div className="flex items-center justify-between mb-2">
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
-                                    Factory Logo <span className="text-slate-400 font-normal text-[11px]">(Optional - Not Mandatory)</span>
-                                </label>
-                                {logoPreview && (
-                                    <button
-                                        type="button"
-                                        onClick={removeLogo}
-                                        className="text-rose-500 hover:text-rose-600 text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                                    >
-                                        <X className="w-3.5 h-3.5" />
-                                        <span>Remove</span>
-                                    </button>
-                                )}
-                            </div>
-
-                            {!logoPreview ? (
-                                <div
-                                    onClick={() => logoInputRef.current?.click()}
-                                    className="border-2 border-dashed border-slate-300 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-500 bg-white dark:bg-slate-900 rounded-xl p-3.5 text-center cursor-pointer transition flex items-center justify-center gap-3.5 group"
-                                >
-                                    <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center group-hover:scale-105 transition shrink-0">
-                                        <Upload className="w-5 h-5" />
-                                    </div>
-                                    <div className="text-left">
-                                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                                            Click to upload factory brand logo
-                                        </p>
-                                        <p className="text-[10px] text-slate-400">PNG, JPG, WEBP, SVG up to 4MB • Not Mandatory</p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-3 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl">
-                                    <img
-                                        src={logoPreview}
-                                        alt="Factory logo preview"
-                                        className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-slate-700 bg-white shrink-0"
-                                    />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium text-slate-900 dark:text-white truncate">
-                                            {data.logo?.name || 'Selected Logo'}
-                                        </p>
-                                        <p className="text-[10px] text-slate-400">
-                                            {data.logo ? `${(data.logo.size / 1024).toFixed(1)} KB` : ''}
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => logoInputRef.current?.click()}
-                                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-semibold px-2.5 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950 transition cursor-pointer"
-                                    >
-                                        Change
-                                    </button>
-                                </div>
-                            )}
-
-                            <input
-                                ref={logoInputRef}
-                                type="file"
-                                accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
-                                onChange={handleLogoChange}
-                                className="hidden"
-                            />
-                            {errors.logo && <p className="text-rose-500 text-[10px] mt-1">{errors.logo}</p>}
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-                            <div className="lg:col-span-2">
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Factory / Business Name <span className="text-rose-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
+                                    onChange={(e) => setData('name', e.target.value)}
                                     required
-                                    value={data.business_name}
-                                    onChange={e => setData('business_name', e.target.value)}
-                                    placeholder="e.g. Apex Textile & Composite Garments Ltd"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-semibold placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                    placeholder="e.g. রহমান নিটিং ইন্ডাস্ট্রিজ"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 />
-                                {errors.business_name && <p className="text-rose-500 text-[10px] mt-1">{errors.business_name}</p>}
+                                {errors.name && <p className="text-rose-500 mt-1">{errors.name}</p>}
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Industry Type
-                                </label>
-                                <select
-                                    value={data.industry_type}
-                                    onChange={e => setData('industry_type', e.target.value)}
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                                >
-                                    {industryTypes.map(ind => (
-                                        <option key={ind} value={ind}>{ind}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Contact Person (Factory Manager)
-                                </label>
+                                <label className="block font-semibold mb-1">Area / Industrial Zone</label>
                                 <input
                                     type="text"
-                                    value={data.contact_person}
-                                    onChange={e => setData('contact_person', e.target.value)}
-                                    placeholder="e.g. Engr. Tanvir Ahmed"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                    value={data.area}
+                                    onChange={(e) => setData('area', e.target.value)}
+                                    placeholder="কোনাবাড়ি, গাজীপুর"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Factory Direct Phone
-                                </label>
+                                <label className="block font-semibold mb-1">Phone</label>
                                 <input
                                     type="text"
-                                    value={data.factory_phone}
-                                    onChange={e => setData('factory_phone', e.target.value)}
-                                    placeholder="Direct landline or mobile"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                    value={data.phone}
+                                    onChange={(e) => setData('phone', e.target.value)}
+                                    placeholder="01711000001"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    District
-                                </label>
-                                <div className="relative">
-                                    <MapPin className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-                                    <select
-                                        value={data.district}
-                                        onChange={e => setData('district', e.target.value)}
-                                        className="w-full pl-9 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                                    >
-                                        {districts.map(d => (
-                                            <option key={d} value={d}>{d}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                <label className="block font-semibold mb-1">Owner Account (Optional)</label>
+                                <SearchableSelect
+                                    value={data.owner_id}
+                                    onChange={(val) => setData('owner_id', val)}
+                                    placeholder="Select owner user..."
+                                    options={owners.map((u) => ({
+                                        value: u.id,
+                                        label: u.name,
+                                        subLabel: `${u.phone} (${u.role})`,
+                                    }))}
+                                />
                             </div>
 
                             <div className="sm:col-span-2 lg:col-span-3">
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">
-                                    Detailed Physical Address
-                                </label>
-                                <textarea
-                                    rows={2}
+                                <label className="block font-semibold mb-1">Full Address</label>
+                                <input
+                                    type="text"
                                     value={data.address}
-                                    onChange={e => setData('address', e.target.value)}
-                                    placeholder="Plot #, Road #, Industrial Sector, Post Code..."
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                    onChange={(e) => setData('address', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">Total Machines *</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    value={data.total_machines}
+                                    onChange={(e) => setData('total_machines', Number(e.target.value))}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">Subscription Plan *</label>
+                                <select
+                                    value={data.plan_code}
+                                    onChange={(e) => setData('plan_code', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    <option value="s">Starter (s · up to 10 MCs · ৳1,000/mo)</option>
+                                    <option value="g">Growth (g · up to 25 MCs · ৳1,500/mo)</option>
+                                    <option value="p">Pro (p · up to 60 MCs · ৳2,500/mo)</option>
+                                    <option value="e">Enterprise (e · Unlimited MCs · ৳4,000/mo)</option>
+                                    <option value="free">Free (free · 5 MCs)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">Billing Cycle *</label>
+                                <select
+                                    value={data.billing_cycle}
+                                    onChange={(e) => setData('billing_cycle', e.target.value as 'm' | 'y')}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    <option value="m">Monthly (m)</option>
+                                    <option value="y">Yearly (y)</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">Yearly Orders</label>
+                                <input
+                                    type="number"
+                                    min={0}
+                                    value={data.yearly_orders_count}
+                                    onChange={(e) => setData('yearly_orders_count', Number(e.target.value))}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">On-Time Delivery %</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                    max={100}
+                                    value={data.ontime_delivery_pct}
+                                    onChange={(e) => setData('ontime_delivery_pct', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">QC Reject %</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                    max={100}
+                                    value={data.qc_reject_pct}
+                                    onChange={(e) => setData('qc_reject_pct', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block font-semibold mb-1">Trial Ends At</label>
+                                <input
+                                    type="date"
+                                    value={data.trial_ends_at}
+                                    onChange={(e) => setData('trial_ends_at', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+
+                            <div className="flex items-center pt-5">
+                                <label className="flex items-center gap-2 font-semibold cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.qr_sticker_enabled}
+                                        onChange={(e) => setData('qr_sticker_enabled', e.target.checked)}
+                                        className="rounded border-slate-300 text-blue-600"
+                                    />
+                                    QR Sticker Enabled
+                                </label>
                             </div>
                         </div>
                     </div>
 
-                    {/* SECTION 3: DEPARTMENT MACHINERY BREAKDOWN */}
-                    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-4 transition-colors">
-                        <div className="flex items-center gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800/80">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-                                <Cpu className="w-4 h-4" />
-                            </div>
+                    {/* Optional Initial Machines */}
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
+                        <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">3. Knitting Types & Machines</h2>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Configure machine rows and line output by department</p>
+                                <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                    <Cpu className="w-4 h-4 text-blue-500" /> Initial Factory Machines
+                                </h2>
+                                <p className="text-xs text-slate-500">Add individual machines into `factory_machines` for this factory.</p>
                             </div>
+                            <button
+                                type="button"
+                                onClick={addMachineRow}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-semibold hover:bg-blue-100"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Add Machine Row
+                            </button>
                         </div>
 
-                        {/* Specialized Knitting Types Selection */}
-                        <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 transition-colors space-y-3">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                        <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                                        Specialized Knitting Types
-                                    </span>
-                                    {/* <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                        Select the knitting fabric types and capabilities this factory produces.
-                                    </p> */}
-                                </div>
-                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
-                                    {(data.knitting_types || []).length} Selected
-                                </span>
-                            </div>
-
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 pt-1">
-                                {(knittingTypes || []).map(kt => {
-                                    const isSelected = (data.knitting_types || []).includes(kt.id);
-                                    return (
-                                        <button
-                                            type="button"
-                                            key={kt.id}
-                                            onClick={() => toggleKnittingType(kt.id)}
-                                            className={`flex items-center gap-2 p-2.5 rounded-xl border text-left text-xs transition cursor-pointer ${
-                                                isSelected
-                                                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 dark:border-blue-700 text-blue-900 dark:text-blue-200 font-semibold shadow-xs'
-                                                    : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
-                                            }`}
-                                        >
-                                            <div className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 border transition ${
-                                                isSelected
-                                                    ? 'bg-blue-600 border-blue-600 text-white'
-                                                    : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950'
-                                            }`}>
-                                                {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <span className="truncate block text-xs">{kt.name}</span>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-
-                        {/* Knitting Machinery Content Area */}
-                        <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 transition-colors">
+                        {data.machines.length === 0 ? (
+                            <p className="text-xs text-slate-500 py-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-xl">
+                                No initial machines added. You can add machines later from Factory Details or Factory Machines.
+                            </p>
+                        ) : (
                             <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <span className="text-xs font-bold text-slate-900 dark:text-white">
-                                            Knitting Machines
-                                        </span>
-                                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                            {(data.production_capacities.knitting || []).length} machinery records registered
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => addMachineRow('knitting')}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition cursor-pointer"
+                                {data.machines.map((row, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 text-xs items-end"
                                     >
-                                        <Plus className="w-3.5 h-3.5" />
-                                        <span>Add Machine Row</span>
-                                    </button>
-                                </div>
-
-                                {(data.production_capacities.knitting || []).length === 0 ? (
-                                    <div className="py-6 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-xl text-slate-500 text-xs">
-                                        No machines registered under knitting yet. Click "Add Machine Row" to register machine units.
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {(data.production_capacities.knitting || []).map((row, idx) => (
-                                            <div key={row.id || idx} className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-5 gap-3 items-center text-xs">
-                                                <div className="sm:col-span-2">
-                                                    <label className="block text-[11px] text-slate-500 mb-1">Machine Type</label>
-                                                    <select
-                                                        value={row.machine_type}
-                                                        onChange={e => updateMachineRow('knitting', idx, 'machine_type', e.target.value)}
-                                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                                                    >
-                                                        {machineTypes.filter(m => m.category === 'knitting').map(m => (
-                                                            <option key={m.id} value={m.name}>{m.name}</option>
-                                                        ))}
-                                                        <option value="Other">Other / Custom Machinery</option>
-                                                    </select>
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[11px] text-slate-500 mb-1">No. of Machines</label>
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        value={row.no_of_machine || ''}
-                                                        onChange={e => updateMachineRow('knitting', idx, 'no_of_machine', e.target.value)}
-                                                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label className="block text-[11px] text-slate-500 mb-1">Daily Cap. / Machine</label>
-                                                    <div className="flex items-center gap-1">
-                                                        <input
-                                                            type="number"
-                                                            min="0"
-                                                            value={row.capacity_per_machine || ''}
-                                                            onChange={e => updateMachineRow('knitting', idx, 'capacity_per_machine', e.target.value)}
-                                                            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-1.5 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
-                                                        />
-                                                        <span className="text-[10px] text-slate-400 font-mono shrink-0">{row.unit_type || 'Kg'}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center justify-between sm:justify-end gap-2 pt-4 sm:pt-0">
-                                                    <div className="text-right">
-                                                        <span className="text-[10px] text-slate-400 block">Total Capacity</span>
-                                                        <span className="font-bold text-blue-600 dark:text-blue-400 text-xs">
-                                                            {row.total_capacity_per_day} {row.unit_type || 'Kg'}
-                                                        </span>
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeMachineRow('knitting', idx)}
-                                                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition cursor-pointer"
-                                                        title="Delete row"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </div>
+                                        <div>
+                                            <label className="block font-medium mb-1">Code *</label>
+                                            <input
+                                                type="text"
+                                                value={row.code}
+                                                onChange={(e) => updateMachineRow(idx, 'code', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block font-medium mb-1">Knit Type</label>
+                                            <select
+                                                value={row.knit_type}
+                                                onChange={(e) => updateMachineRow(idx, 'knit_type', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
+                                            >
+                                                <option value="c">Circular (c)</option>
+                                                <option value="f">Flat (f)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block font-medium mb-1">Dia / Gauge</label>
+                                            <div className="flex gap-1">
+                                                <input
+                                                    type="number"
+                                                    value={row.dia}
+                                                    onChange={(e) => updateMachineRow(idx, 'dia', e.target.value)}
+                                                    placeholder="30"
+                                                    className="w-1/2 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
+                                                />
+                                                <input
+                                                    type="number"
+                                                    value={row.gauge}
+                                                    onChange={(e) => updateMachineRow(idx, 'gauge', e.target.value)}
+                                                    placeholder="24"
+                                                    className="w-1/2 px-2 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
+                                                />
                                             </div>
-                                        ))}
+                                        </div>
+                                        <div>
+                                            <label className="block font-medium mb-1">Brand</label>
+                                            <input
+                                                type="text"
+                                                value={row.brand}
+                                                onChange={(e) => updateMachineRow(idx, 'brand', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block font-medium mb-1">Capacity (kg)</label>
+                                            <input
+                                                type="number"
+                                                value={row.daily_capacity_kg}
+                                                onChange={(e) => updateMachineRow(idx, 'daily_capacity_kg', e.target.value)}
+                                                className="w-full px-2.5 py-1.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
+                                            />
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <label className="flex items-center gap-1.5 text-[11px] font-medium">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={row.broadcast_free}
+                                                    onChange={(e) => updateMachineRow(idx, 'broadcast_free', e.target.checked)}
+                                                />
+                                                Free Broadcast
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeMachineRow(idx)}
+                                                className="p-1.5 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </div>
-                                )}
+                                ))}
                             </div>
-                        </div>
+                        )}
                     </div>
 
-                    {/* SECTION 4: LEGAL KYC & REGULATORY DOCUMENTS */}
-                    <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-4 transition-colors">
-                        <div className="flex items-center gap-2.5 pb-3 border-b border-slate-200 dark:border-slate-800/80">
-                            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20">
-                                <Shield className="w-4 h-4" />
-                            </div>
-                            <div>
-                                <h2 className="text-sm font-bold text-slate-900 dark:text-white">4. Regulatory Documentation & KYC Verification</h2>
-                                <p className="text-[11px] text-slate-500 dark:text-slate-400">Trade License, Tax Identification, and Business Identification records.</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">Trade License Number</label>
-                                <input
-                                    type="text"
-                                    value={data.trade_license_no}
-                                    onChange={e => setData('trade_license_no', e.target.value)}
-                                    placeholder="e.g. TRAD/GZP/2026/0192"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
-                                />
-                                <div className="mt-2">
-                                    <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1 font-medium">Attach Trade License (PDF / Image)</label>
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        onChange={e => setData('trade_license_file', e.target.files ? e.target.files[0] : null)}
-                                        className="w-full text-[11px] text-slate-500 dark:text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700 cursor-pointer"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">TIN Number</label>
-                                <input
-                                    type="text"
-                                    value={data.tin_no}
-                                    onChange={e => setData('tin_no', e.target.value)}
-                                    placeholder="e.g. 748291028374"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
-                                />
-                                <div className="mt-2">
-                                    <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1 font-medium">Attach TIN Certificate</label>
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        onChange={e => setData('tin_file', e.target.files ? e.target.files[0] : null)}
-                                        className="w-full text-[11px] text-slate-500 dark:text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700 cursor-pointer"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-slate-700 dark:text-slate-300 font-semibold mb-1">BIN Number (VAT Reg)</label>
-                                <input
-                                    type="text"
-                                    value={data.bin_no}
-                                    onChange={e => setData('bin_no', e.target.value)}
-                                    placeholder="e.g. 001928374-0101"
-                                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-blue-500"
-                                />
-                                <div className="mt-2">
-                                    <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1 font-medium">Attach BIN Certificate</label>
-                                    <input
-                                        type="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        onChange={e => setData('bin_file', e.target.files ? e.target.files[0] : null)}
-                                        className="w-full text-[11px] text-slate-500 dark:text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-slate-100 hover:file:bg-slate-200 dark:file:bg-slate-800 dark:file:text-slate-300 dark:hover:file:bg-slate-700 cursor-pointer"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="pt-2 flex items-center justify-between border-t border-slate-200 dark:border-slate-800">
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={data.is_verified}
-                                    onChange={e => setData('is_verified', e.target.checked)}
-                                    className="sr-only peer"
-                                />
-                                <div className="w-9 h-5 bg-slate-200 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                                <span className="ml-2 text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                                    <BadgeCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                    Mark Factory as Verified & Trusted Badge
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-
-                    {/* ACTION SUBMISSION BAR */}
-                    <div className="flex items-center justify-end gap-3 pt-3">
+                    <div className="flex justify-end gap-3">
                         <Link
                             href={route('admin.factories.index')}
-                            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 transition"
+                            className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold"
                         >
                             Cancel
                         </Link>
                         <button
-                            type="button"
-                            onClick={() => reset()}
-                            className="px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 transition"
-                        >
-                            Reset Form
-                        </button>
-                        <button
                             type="submit"
                             disabled={processing}
-                            className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 transition transform active:scale-95 disabled:opacity-50 cursor-pointer"
+                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 disabled:opacity-50"
                         >
-                            <Check className="w-4 h-4" />
-                            <span>{processing ? 'Creating Factory Profile...' : 'Save & Create Factory'}</span>
+                            <Save className="w-4 h-4" /> {processing ? 'Saving...' : 'Create Factory'}
                         </button>
                     </div>
                 </form>

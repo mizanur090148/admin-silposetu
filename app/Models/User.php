@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -12,30 +13,40 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory;
+
+    use Notifiable;
 
     /**
-     * The attributes that are mass assignable.
-     *
      * @var list<string>
      */
     protected $fillable = [
-        'customer_id',
         'name',
-        'email',
         'phone',
+        'email',
         'password',
-        'account_type',
-        'status',
+        'role',
+        'designation',
+        'organization_name',
+        'factory_id',
+        'vendor_id',
+        'supplier_id',
+        'partner_code',
+        'party_code',
+        'is_owner',
+        'is_vendor_rep',
+        'can_message',
+        'is_active',
         'phone_verified_at',
-        'nid_number',
-        'is_subscribed',
-        'subscription_expires_at',
+        'trial_ends_at',
+        'subscription_plan',
+        'billing_cycle',
+        'last_login_label',
+        'permissions_json',
+        'profile_json',
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
      * @var list<string>
      */
     protected $hidden = [
@@ -44,73 +55,55 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'phone_verified_at' => 'datetime',
-            'subscription_expires_at' => 'datetime',
-            'is_subscribed' => 'boolean',
             'password' => 'hashed',
+            'is_owner' => 'boolean',
+            'is_vendor_rep' => 'boolean',
+            'can_message' => 'boolean',
+            'is_active' => 'boolean',
+            'phone_verified_at' => 'datetime',
+            'trial_ends_at' => 'datetime',
+            'permissions_json' => 'array',
+            'profile_json' => 'array',
         ];
     }
 
-    /**
-     * Get associated factory profile.
-     */
-    public function factory(): HasOne
+    public function factory(): BelongsTo
     {
-        return $this->hasOne(Factory::class);
+        return $this->belongsTo(Factory::class, 'factory_id');
     }
 
-    /**
-     * Get subcontract posts created by this user.
-     */
+    public function ownedFactories(): HasMany
+    {
+        return $this->hasMany(Factory::class, 'owner_id');
+    }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class, 'supplier_id');
+    }
+
+    public function partner(): HasOne
+    {
+        return $this->hasOne(Partner::class, 'user_id');
+    }
+
     public function subcontractPosts(): HasMany
     {
-        return $this->hasMany(SubcontractPost::class);
+        return $this->hasMany(SubcontractPost::class, 'user_id');
     }
 
-    /**
-     * Get quotations submitted by this user.
-     */
-    public function quotations(): HasMany
+    public function isAdmin(): bool
     {
-        return $this->hasMany(Quotation::class, 'bidder_user_id');
-    }
-
-    /**
-     * Get user subscriptions.
-     */
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(Subscription::class);
-    }
-
-    /**
-     * Check if user has active paid subscription.
-     */
-    public function hasActiveSubscription(): bool
-    {
-        return (bool) $this->is_subscribed;
-    }
-
-    /**
-     * Generate next unique Customer ID (e.g. S20260101, B20260101).
-     */
-    public static function generateUniqueCustomerId(string $prefix = 'S'): string
-    {
-        $year = date('Y');
-        $count = static::count() + 101;
-        do {
-            $customerId = $prefix.$year.str_pad((string) $count, 4, '0', STR_PAD_LEFT);
-            $count++;
-        } while (static::where('customer_id', $customerId)->exists());
-
-        return $customerId;
+        return $this->role === 'admin';
     }
 }

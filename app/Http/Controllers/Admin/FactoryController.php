@@ -3,1067 +3,500 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Bill;
+use App\Models\DeliveryChallan;
+use App\Models\Employee;
 use App\Models\Factory;
-use App\Models\KnittingType;
-use App\Models\MachineType;
+use App\Models\FactoryExpense;
+use App\Models\FactoryMachine;
+use App\Models\Party;
+use App\Models\QcInspection;
+use App\Models\SubcontractOrder;
 use App\Models\User;
+use App\Support\PlanCatalog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class FactoryController extends Controller
 {
-    /**
-     * Common industrial districts in Bangladesh.
-     */
-    public const DISTRICTS = [
-        'Gazipur',
-        'Ashulia',
-        'Savar',
-        'Tongi',
-        'Narayanganj',
-        'Dhaka',
-        'Chittagong',
-        'Tangail',
-        'Mymensingh',
-        'Cumilla',
-        'Narsingdi',
-        'Bhaluka',
-        'Manikganj',
-        'Munshiganj',
-        'Habiganj',
-        'Other',
-    ];
-
-    /**
-     * Common industry types in textile & apparel manufacturing.
-     */
-    public const INDUSTRY_TYPES = [
-        'Apparel & Garments',
-        'Knitwear & Composite',
-        'Woven Manufacturing',
-        'Dyeing & Finishing Mill',
-        'Denim & Washing Plant',
-        'Yarn Spinning Mill',
-        'Printing & Embroidery Unit',
-        'Packaging & Accessories',
-        'Textile Mill',
-        'Leather & Footwear',
-    ];
-
-
-    /**
-     * Display dedicated queue of pending factory verifications only.
-     */
-    public function pendingVerifications(Request $request): Response
-    {
-        $search = $request->input('search', '');
-        $district = $request->input('district', 'all');
-
-        $query = User::with('factory')
-            ->where('account_type', 'factory')
-            ->where('status', 'pending');
-
-        // Apply search
-        if (! empty($search)) {
-            $term = '%'.$search.'%';
-            $query->where(function ($q) use ($term) {
-                $q->where('name', 'like', $term)
-                    ->orWhere('email', 'like', $term)
-                    ->orWhere('phone', 'like', $term)
-                    ->orWhere('customer_id', 'like', $term)
-                    ->orWhereHas('factory', function ($fq) use ($term) {
-                        $fq->where('business_name', 'like', $term)
-                            ->orWhere('district', 'like', $term)
-                            ->orWhere('contact_person', 'like', $term);
-                    });
-            });
-        }
-
-        // Apply district filter
-        if (! empty($district) && $district !== 'all') {
-            $query->whereHas('factory', function ($fq) use ($district) {
-                $fq->where('district', $district);
-            });
-        }
-
-        $perPage = (int) $request->input('per_page', 15);
-        if ($perPage < 5 || $perPage > 100) {
-            $perPage = 15;
-        }
-
-        $factories = $query->latest()->paginate($perPage)->withQueryString();
-
-        $districts = Factory::select('district')
-            ->whereNotNull('district')
-            ->distinct()
-            ->pluck('district');
-
-        return Inertia::render('Admin/Factories/Pending', [
-            'factories' => $factories,
-            'filters' => [
-                'search' => $search,
-                'district' => $district,
-                'per_page' => $perPage,
-            ],
-            'districts' => $districts,
-            'pendingCount' => $factories->total(),
-        ]);
-    }
-
-    /**
-     * Display list of factories filtered by tab & search query.
-     */
     public function index(Request $request): Response
     {
-        $tab = $request->input('tab', 'all');
-        $search = $request->input('search', '');
-        $district = $request->input('district', 'all');
+        $search = trim((string) $request->input('search', ''));
+        $planCode = $request->input('plan_code', 'all');
+        $billingCycle = $request->input('billing_cycle', 'all');
+        $qrFilter = $request->input('qr_sticker', 'all');
+        $perPage = min(max((int) $request->input('per_page', 15), 5), 100);
 
-        $query = User::with('factory')
-            ->where('account_type', 'factory');
-
-        // Apply tab status filter
-        if ($tab === 'pending') {
-            $query->where('status', 'pending');
-        } elseif ($tab === 'active') {
-            $query->where('status', 'active');
-        } elseif ($tab === 'suspended') {
-            $query->where('status', 'suspended');
-        }
-
-        // Apply search
-        if (! empty($search)) {
-            $term = '%'.$search.'%';
-            $query->where(function ($q) use ($term) {
-                $q->where('name', 'like', $term)
-                    ->orWhere('email', 'like', $term)
-                    ->orWhere('phone', 'like', $term)
-                    ->orWhere('customer_id', 'like', $term)
-                    ->orWhereHas('factory', function ($fq) use ($term) {
-                        $fq->where('business_name', 'like', $term)
-                            ->orWhere('district', 'like', $term);
-                    });
+        $query = Factory::query()
+            ->with('owner:id,name,phone,email')
+            ->withCount(['factoryMachines', 'users', 'freeMachineRequests', 'subcontractPosts', 'subcontractOrders'])
+            ->when($search !== '', function ($q) use ($search): void {
+                $q->where(function ($sub) use ($search): void {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhere('area', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhereHas('owner', function ($uq) use ($search): void {
+                            $uq->where('name', 'like', "%{$search}%")
+                                ->orWhere('phone', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($planCode !== 'all', function ($q) use ($planCode): void {
+                $q->where('plan_code', $planCode);
+            })
+            ->when($billingCycle !== 'all', function ($q) use ($billingCycle): void {
+                $q->where('billing_cycle', $billingCycle);
+            })
+            ->when($qrFilter !== 'all', function ($q) use ($qrFilter): void {
+                $q->where('qr_sticker_enabled', $qrFilter === '1');
             });
-        }
 
-        // Apply district filter
-        if (! empty($district) && $district !== 'all') {
-            $query->whereHas('factory', function ($fq) use ($district) {
-                $fq->where('district', $district);
-            });
-        }
+        $factories = $query->latest('id')->paginate($perPage)->withQueryString();
 
-        $perPage = (int) $request->input('per_page', 15);
-        if ($perPage < 5 || $perPage > 100) {
-            $perPage = 15;
-        }
-
-        $factories = $query->latest()->paginate($perPage)->withQueryString();
-
-        $counts = [
-            'pending' => User::where('account_type', 'factory')->where('status', 'pending')->count(),
-            'active' => User::where('account_type', 'factory')->where('status', 'active')->count(),
-            'suspended' => User::where('account_type', 'factory')->where('status', 'suspended')->count(),
-            'all' => User::where('account_type', 'factory')->count(),
+        $summary = [
+            'total_factories' => Factory::count(),
+            'total_configured_machines' => (int) Factory::sum('total_machines'),
+            'tracked_machines' => FactoryMachine::count(),
+            'qr_enabled' => Factory::where('qr_sticker_enabled', true)->count(),
         ];
-
-        $districts = Factory::select('district')
-            ->whereNotNull('district')
-            ->distinct()
-            ->pluck('district');
 
         return Inertia::render('Admin/Factories/Index', [
             'factories' => $factories,
-            'counts' => $counts,
+            'summary' => $summary,
+            'plans' => Factory::query()->whereNotNull('plan_code')->distinct()->orderBy('plan_code')->pluck('plan_code'),
             'filters' => [
-                'tab' => $tab,
                 'search' => $search,
-                'district' => $district,
+                'plan_code' => $planCode,
+                'billing_cycle' => $billingCycle,
+                'qr_sticker' => $qrFilter,
                 'per_page' => $perPage,
             ],
-            'districts' => $districts,
         ]);
     }
 
-    /**
-     * Show the factory creation form.
-     */
     public function create(): Response
     {
-        $machineTypes = MachineType::query()
-            ->active()
-            ->orderBy('category')
-            ->orderBy('sort_order')
-            ->get();
-
-        $knittingTypes = KnittingType::active()->orderBy('sort_order')->get();
+        $owners = User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone', 'role', 'organization_name']);
 
         return Inertia::render('Admin/Factories/Create', [
-            'machineTypes' => $machineTypes,
-            'knittingTypes' => $knittingTypes,
-            'districts' => self::DISTRICTS,
-            'industryTypes' => self::INDUSTRY_TYPES,
-            'suggestedCustomerId' => User::generateUniqueCustomerId('S'),
+            'owners' => $owners,
+            'suggestedCode' => $this->nextFactoryCode(),
         ]);
     }
 
-    /**
-     * Store a newly created factory and owner account.
-     */
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            // Owner Account Fields
+            'code' => ['nullable', 'string', 'max:30', Rule::unique('factories', 'code')],
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30', 'unique:users,phone'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['nullable', 'string', 'min:6'],
-            'customer_id' => ['nullable', 'string', 'max:30', 'unique:users,customer_id'],
-            'nid_number' => ['nullable', 'string', 'max:50'],
-            'status' => ['required', 'in:active,pending,suspended'],
-            'is_subscribed' => ['boolean'],
-
-            // Factory Details Fields
-            'business_name' => ['required', 'string', 'max:255'],
-            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:4096'],
-            'industry_type' => ['nullable', 'string', 'max:255'],
-            'contact_person' => ['nullable', 'string', 'max:255'],
-            'factory_phone' => ['nullable', 'string', 'max:50'],
-            'factory_email' => ['nullable', 'email', 'max:255'],
-            'district' => ['nullable', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'total_machines' => ['nullable', 'integer', 'min:0'],
-            'daily_capacity' => ['nullable', 'string', 'max:100'],
-            'is_verified' => ['boolean'],
-            'knitting_types' => ['nullable', 'array'],
-            'knitting_types.*' => ['integer'],
-            'production_capacities' => ['nullable', 'array'],
-
-            // Legal & Documents
-            'trade_license_no' => ['nullable', 'string', 'max:100'],
-            'tin_no' => ['nullable', 'string', 'max:100'],
-            'bin_no' => ['nullable', 'string', 'max:100'],
-            'trade_license_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-            'tin_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-            'bin_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-            'nid_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            'area' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'total_machines' => ['required', 'integer', 'min:0'],
+            'plan_code' => ['required', 'string', 'max:10'],
+            'trial_ends_at' => ['nullable', 'date'],
+            'owner_id' => ['nullable', 'integer', 'exists:users,id'],
+            'billing_cycle' => ['required', 'string', Rule::in(['m', 'y'])],
+            'qr_sticker_enabled' => ['boolean'],
+            'last_update_label' => ['nullable', 'string', 'max:255'],
+            'yearly_orders_count' => ['nullable', 'integer', 'min:0'],
+            'ontime_delivery_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'qc_reject_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'machines' => ['nullable', 'array'],
+            'machines.*.code' => ['required_with:machines', 'string', 'max:20', 'distinct'],
+            'machines.*.knit_type' => ['required_with:machines', 'string', Rule::in(['c', 'f'])],
+            'machines.*.dia' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'machines.*.gauge' => ['required_with:machines', 'integer', 'min:1', 'max:60'],
+            'machines.*.spec_label' => ['nullable', 'string', 'max:40'],
+            'machines.*.brand' => ['nullable', 'string', 'max:255'],
+            'machines.*.status' => ['nullable', 'string', 'max:50'],
+            'machines.*.broadcast_free' => ['boolean'],
+            'machines.*.daily_capacity_kg' => ['nullable', 'integer', 'min:1'],
+            'machines.*.rate_label' => ['nullable', 'string', 'max:255'],
+            'machines.*.supported_fabrics' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $customerId = ! empty($validated['customer_id'])
-            ? trim($validated['customer_id'])
-            : User::generateUniqueCustomerId('S');
-
-        $rawPassword = ! empty($validated['password'])
-            ? $validated['password']
-            : 'Shilpo@2026';
-
-        // Auto-aggregate capacity metrics if production_capacities is supplied
-        $totalMachines = isset($validated['total_machines']) && $validated['total_machines'] !== '' ? (int) $validated['total_machines'] : 0;
-        $dailyCapacity = ! empty($validated['daily_capacity']) ? $validated['daily_capacity'] : null;
-
-        if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
-            $capacities = $validated['production_capacities'];
-
-            // Sum knitting & other machinery counts and aggregate total daily output
-            $calcMachines = 0;
-            $calcDaily = 0;
-            $dailyUnit = 'Kg';
-            foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
-                if (isset($capacities[$dept]) && is_array($capacities[$dept])) {
-                    foreach ($capacities[$dept] as $row) {
-                        $calcMachines += (int) ($row['no_of_machine'] ?? 0);
-                        if (! empty($row['total_capacity_per_day'])) {
-                            $calcDaily += (float) $row['total_capacity_per_day'];
-                            if (! empty($row['unit_type'])) {
-                                $dailyUnit = $row['unit_type'];
-                            }
-                        }
-                    }
-                }
+        $factory = DB::transaction(function () use ($validated, $request): Factory {
+            $code = trim((string) ($validated['code'] ?? ''));
+            if ($code === '') {
+                $code = $this->nextFactoryCode();
             }
-            if ($calcMachines > 0 && $totalMachines === 0) {
-                $totalMachines = $calcMachines;
-            }
-            if ($calcDaily > 0 && empty($dailyCapacity)) {
-                $dailyCapacity = number_format($calcDaily).' '.$dailyUnit.'/Day';
-            }
-        }
-
-        // Upload Factory Logo if present
-        $logoPath = null;
-        if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('factory_logos', 'public');
-            $frontendStorage = base_path('../shilposetu/storage/app/public/factory_logos');
-            if (is_dir(dirname($frontendStorage))) {
-                @mkdir($frontendStorage, 0755, true);
-                @copy(storage_path('app/public/'.$logoPath), $frontendStorage.'/'.basename($logoPath));
-            }
-        }
-
-        // Upload KYC Document files if present
-        $uploadedDocs = [];
-        foreach (['trade_license_file', 'tin_file', 'bin_file', 'nid_file'] as $docKey) {
-            if ($request->hasFile($docKey)) {
-                $uploadedDocs[$docKey] = $request->file($docKey)->store('factory_docs', 'public');
-            }
-        }
-
-        DB::transaction(function () use (
-            $validated,
-            $customerId,
-            $rawPassword,
-            $totalMachines,
-            $dailyCapacity,
-            $logoPath,
-            $uploadedDocs,
-            &$user
-        ) {
-            $user = User::create([
-                'customer_id' => $customerId,
-                'name' => $validated['name'],
-                'phone' => $validated['phone'],
-                'email' => $validated['email'],
-                'password' => Hash::make($rawPassword),
-                'account_type' => 'factory',
-                'status' => $validated['status'],
-                'nid_number' => $validated['nid_number'] ?? null,
-                'is_subscribed' => (bool) ($validated['is_subscribed'] ?? true),
-                'phone_verified_at' => now(),
-                'email_verified_at' => now(),
-            ]);
 
             $factory = Factory::create([
-                'user_id' => $user->id,
-                'business_name' => $validated['business_name'],
-                'logo' => $logoPath,
-                'industry_type' => 'Knitting',
-                'contact_person' => $validated['contact_person'] ?? $validated['name'],
-                'phone' => $validated['factory_phone'] ?? $validated['phone'],
-                'email' => $validated['factory_email'] ?? $validated['email'],
-                'district' => $validated['district'] ?? 'Gazipur',
+                'code' => $code,
+                'name' => $validated['name'],
+                'area' => $validated['area'] ?? null,
                 'address' => $validated['address'] ?? null,
-                'total_machines' => $totalMachines,
-                'daily_capacity' => $dailyCapacity,
-                'is_verified' => (bool) ($validated['is_verified'] ?? ($validated['status'] === 'active')),
-                'trade_license_no' => $validated['trade_license_no'] ?? null,
-                'trade_license_file' => $uploadedDocs['trade_license_file'] ?? null,
-                'tin_no' => $validated['tin_no'] ?? null,
-                'tin_file' => $uploadedDocs['tin_file'] ?? null,
-                'bin_no' => $validated['bin_no'] ?? null,
-                'bin_file' => $uploadedDocs['bin_file'] ?? null,
-                'nid_file' => $uploadedDocs['nid_file'] ?? null,
+                'phone' => $validated['phone'] ?? null,
+                'total_machines' => $validated['total_machines'],
+                'plan_code' => $validated['plan_code'],
+                'trial_ends_at' => $validated['trial_ends_at'] ?? null,
+                'owner_id' => $validated['owner_id'] ?? null,
+                'billing_cycle' => $validated['billing_cycle'],
+                'qr_sticker_enabled' => $request->boolean('qr_sticker_enabled', true),
+                'last_update_label' => ! empty($validated['last_update_label']) ? $validated['last_update_label'] : 'আজ ২:০০',
+                'yearly_orders_count' => $validated['yearly_orders_count'] ?? 14,
+                'ontime_delivery_pct' => $validated['ontime_delivery_pct'] ?? 93.00,
+                'qc_reject_pct' => $validated['qc_reject_pct'] ?? 0.60,
             ]);
 
-            if (! empty($validated['knitting_types'])) {
-                $factory->knittingTypes()->sync($validated['knitting_types']);
+            if (! empty($validated['owner_id'])) {
+                User::where('id', $validated['owner_id'])->whereNull('factory_id')->update(['factory_id' => $factory->id]);
             }
 
-            // Sync factory machines
-            if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
-                $order = 1;
-                foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
-                    if (! empty($validated['production_capacities'][$dept]) && is_array($validated['production_capacities'][$dept])) {
-                        foreach ($validated['production_capacities'][$dept] as $row) {
-                            $mTypeId = ! empty($row['machine_type_id']) ? (int) $row['machine_type_id'] : null;
-                            if ($mTypeId) {
-                                $factory->machines()->create([
-                                    'machine_type_id' => $mTypeId,
-                                    'category' => $dept ?: 'knitting',
-                                    'no_of_machine' => (int) ($row['no_of_machine'] ?? 1),
-                                    'capacity_per_machine' => (float) ($row['capacity_per_machine'] ?? 0),
-                                    'total_capacity_per_day' => (float) ($row['total_capacity_per_day'] ?? 0),
-                                    'unit_type' => $row['unit_type'] ?? 'Kg',
-                                    'sort_order' => $order++,
-                                ]);
-                            }
-                        }
-                    }
+            foreach ($validated['machines'] ?? [] as $row) {
+                $knitType = $row['knit_type'] ?? 'c';
+                $dia = $row['dia'] ?? null;
+                $gauge = (int) ($row['gauge'] ?? 24);
+                $specLabel = trim((string) ($row['spec_label'] ?? ''));
+                if ($specLabel === '') {
+                    $specLabel = $knitType === 'f' ? "ফ্ল্যাট · {$gauge}G" : ($dia ? "{$dia}\" × {$gauge}G" : "{$gauge}G");
                 }
+
+                $supported = collect(explode(',', (string) ($row['supported_fabrics'] ?? '')))
+                    ->map(fn (string $v): string => trim($v))
+                    ->filter()
+                    ->values()
+                    ->all();
+
+                $factory->factoryMachines()->create([
+                    'code' => trim((string) $row['code']),
+                    'knit_type' => $knitType,
+                    'dia' => $dia,
+                    'gauge' => $gauge,
+                    'spec_label' => $specLabel,
+                    'brand' => $row['brand'] ?? null,
+                    'status' => ! empty($row['status']) ? $row['status'] : 'idle',
+                    'broadcast_free' => (bool) ($row['broadcast_free'] ?? false),
+                    'daily_capacity_kg' => $row['daily_capacity_kg'] ?? 190,
+                    'rate_label' => $row['rate_label'] ?? null,
+                    'supported_fabrics_json' => ! empty($supported) ? $supported : null,
+                ]);
             }
+
+            return $factory;
         });
 
-        return redirect()->route('admin.factories.show', $user->id)
-            ->with('success', "Factory '{$validated['business_name']}' created successfully (Customer ID: {$customerId}).");
+        return redirect()->route('admin.factories.show', $factory->id)
+            ->with('success', "Factory \"{$factory->name}\" ({$factory->code}) created successfully.");
     }
 
-    /**
-     * Show the bulk import page.
-     */
+    public function show(int $id): Response
+    {
+        $factory = Factory::query()
+            ->with([
+                'owner:id,name,phone,email,role',
+                'users:id,factory_id,name,phone,email,role,designation,is_owner,is_active,subscription_plan',
+                'factoryMachines' => fn ($q) => $q->orderBy('code'),
+                'freeMachineRequests' => fn ($q) => $q->latest('id')->limit(10),
+                'subcontractPosts' => fn ($q) => $q->withCount('quotations')->latest('id')->limit(10),
+                'vendors:id,factory_id,code,name,type,phone,is_verified',
+            ])
+            ->withCount(['factoryMachines', 'users', 'subcontractOrders', 'parties', 'employees'])
+            ->findOrFail($id);
+
+        $orderNos = SubcontractOrder::where('factory_id', $factory->id)->pluck('order_no');
+        $bills = Bill::where('factory_code', $factory->code)->latest('id')->get();
+        $billedTk = 0.0;
+        $paidTk = 0.0;
+        $recentBills = $bills->take(5)->map(function (Bill $bill) use (&$billedTk, &$paidTk): array {
+            $t = PlanCatalog::billTotals($bill);
+
+            return [
+                'id' => $bill->id,
+                'bill_no' => $bill->bill_no,
+                'party_code' => $bill->party_code,
+                'jv_no' => $bill->jv_no,
+                'bill_date' => $bill->bill_date?->format('Y-m-d'),
+                ...$t,
+            ];
+        })->values();
+
+        foreach ($bills as $b) {
+            $t = PlanCatalog::billTotals($b);
+            $billedTk += $t['gross_tk'];
+            $paidTk += $t['paid_tk'];
+        }
+
+        $health = PlanCatalog::factoryHealth($factory, (int) $factory->factory_machines_count);
+        $planMeta = PlanCatalog::get($factory->plan_code);
+
+        $erpOverview = [
+            'active_orders' => SubcontractOrder::where('factory_id', $factory->id)->whereIn('status', ['run', 'running'])->count(),
+            'total_orders' => SubcontractOrder::where('factory_id', $factory->id)->count(),
+            'parties_count' => Party::where('factory_id', $factory->id)->count(),
+            'employees_count' => Employee::where('factory_id', $factory->id)->count(),
+            'qc_count' => QcInspection::whereIn('order_no', $orderNos)->count(),
+            'challans_count' => DeliveryChallan::where('factory_code', $factory->code)->count(),
+            'billed_tk' => round($billedTk, 2),
+            'paid_tk' => round($paidTk, 2),
+            'expenses_tk' => (float) FactoryExpense::where('factory_id', $factory->id)->sum('amount_tk'),
+            'plan_meta' => $planMeta,
+            'health' => $health,
+            'recent_orders' => SubcontractOrder::where('factory_id', $factory->id)
+                ->latest('id')
+                ->take(8)
+                ->get(['id', 'order_no', 'buyer', 'party_code', 'fabric_summary', 'total_qty_kg', 'done_kg', 'delivered_kg', 'rate_tk', 'status']),
+            'recent_bills' => $recentBills,
+            'recent_expenses' => FactoryExpense::where('factory_id', $factory->id)
+                ->latest('expense_date')
+                ->take(5)
+                ->get(['id', 'category', 'title', 'amount_tk', 'payment_method', 'expense_date']),
+            'parties' => Party::where('factory_id', $factory->id)
+                ->orderBy('name')
+                ->take(10)
+                ->get(['id', 'code', 'name', 'type', 'phone', 'default_rate_tk', 'is_active']),
+            'employees' => Employee::where('factory_id', $factory->id)
+                ->orderBy('name')
+                ->take(12)
+                ->get(['id', 'employee_type', 'name', 'designation', 'shift', 'machine_assigned', 'daily_wage', 'status']),
+        ];
+
+        return Inertia::render('Admin/Factories/Show', [
+            'factory' => $factory,
+            'erpOverview' => $erpOverview,
+        ]);
+    }
+
+    public function edit(int $id): Response
+    {
+        $factory = Factory::query()
+            ->with(['owner:id,name,phone', 'factoryMachines' => fn ($q) => $q->orderBy('code')])
+            ->findOrFail($id);
+
+        $owners = User::query()
+            ->orderBy('name')
+            ->get(['id', 'name', 'phone', 'role', 'organization_name']);
+
+        return Inertia::render('Admin/Factories/Edit', [
+            'factory' => $factory,
+            'owners' => $owners,
+        ]);
+    }
+
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $factory = Factory::findOrFail($id);
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:30', Rule::unique('factories', 'code')->ignore($factory->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'area' => ['nullable', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:30'],
+            'total_machines' => ['required', 'integer', 'min:0'],
+            'plan_code' => ['required', 'string', 'max:10'],
+            'trial_ends_at' => ['nullable', 'date'],
+            'owner_id' => ['nullable', 'integer', 'exists:users,id'],
+            'billing_cycle' => ['required', 'string', Rule::in(['m', 'y'])],
+            'qr_sticker_enabled' => ['boolean'],
+            'last_update_label' => ['nullable', 'string', 'max:255'],
+            'yearly_orders_count' => ['nullable', 'integer', 'min:0'],
+            'ontime_delivery_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'qc_reject_pct' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        $factory->update([
+            'code' => trim($validated['code']),
+            'name' => $validated['name'],
+            'area' => $validated['area'] ?? null,
+            'address' => $validated['address'] ?? null,
+            'phone' => $validated['phone'] ?? null,
+            'total_machines' => $validated['total_machines'],
+            'plan_code' => $validated['plan_code'],
+            'trial_ends_at' => $validated['trial_ends_at'] ?? null,
+            'owner_id' => $validated['owner_id'] ?? null,
+            'billing_cycle' => $validated['billing_cycle'],
+            'qr_sticker_enabled' => $request->boolean('qr_sticker_enabled'),
+            'last_update_label' => ! empty($validated['last_update_label']) ? $validated['last_update_label'] : $factory->last_update_label,
+            'yearly_orders_count' => $validated['yearly_orders_count'] ?? $factory->yearly_orders_count,
+            'ontime_delivery_pct' => $validated['ontime_delivery_pct'] ?? $factory->ontime_delivery_pct,
+            'qc_reject_pct' => $validated['qc_reject_pct'] ?? $factory->qc_reject_pct,
+        ]);
+
+        return redirect()->route('admin.factories.show', $factory->id)
+            ->with('success', "Factory \"{$factory->name}\" updated successfully.");
+    }
+
+    public function toggleQrSticker(int $id): RedirectResponse
+    {
+        $factory = Factory::findOrFail($id);
+        $factory->update(['qr_sticker_enabled' => ! $factory->qr_sticker_enabled]);
+
+        $state = $factory->qr_sticker_enabled ? 'enabled' : 'disabled';
+
+        return back()->with('success', "QR sticker feature {$state} for \"{$factory->name}\".");
+    }
+
+    public function extendTrial(Request $request, int $id): RedirectResponse
+    {
+        $factory = Factory::findOrFail($id);
+
+        $validated = $request->validate([
+            'days' => ['nullable', 'integer', 'min:1', 'max:365'],
+        ]);
+
+        $days = (int) ($validated['days'] ?? 30);
+        $base = $factory->trial_ends_at && Carbon::parse($factory->trial_ends_at)->isFuture()
+            ? Carbon::parse($factory->trial_ends_at)
+            : now();
+
+        $factory->update([
+            'trial_ends_at' => $base->copy()->addDays($days),
+        ]);
+
+        return back()->with('success', "Extended trial for \"{$factory->name}\" by {$days} days.");
+    }
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $factory = Factory::findOrFail($id);
+        $name = $factory->name;
+
+        DB::transaction(function () use ($factory): void {
+            User::where('factory_id', $factory->id)->update(['factory_id' => null]);
+            $factory->delete();
+        });
+
+        return redirect()->route('admin.factories.index')
+            ->with('success', "Factory \"{$name}\" and its factory-owned records deleted.");
+    }
+
     public function importView(): Response
     {
         return Inertia::render('Admin/Factories/Import', [
-            'districts' => self::DISTRICTS,
-            'industryTypes' => self::INDUSTRY_TYPES,
+            'existingPlans' => Factory::query()->whereNotNull('plan_code')->distinct()->pluck('plan_code'),
         ]);
     }
 
-    /**
-     * Download sample CSV template for bulk inserting factories.
-     */
     public function downloadTemplate(): StreamedResponse
     {
-        $headers = [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="factories_bulk_import_template.csv"',
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        return response()->stream(function () {
+        return response()->streamDownload(function (): void {
             $handle = fopen('php://output', 'w');
-
-            // UTF-8 BOM for Microsoft Excel compatibility
-            fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
-
-            // CSV Column Header
-            fputcsv($handle, [
-                'business_name',
-                'owner_name',
-                'phone',
-                'email',
-                'district',
-                'address',
-                'industry_type',
-                'contact_person',
-                'total_machines',
-                'daily_capacity',
-                'trade_license_no',
-                'tin_no',
-                'bin_no',
-                'password',
-                'status',
-                'is_verified',
-            ]);
-
-            // Sample Demo Rows
-            $sampleRows = [
-                [
-                    'Apex Textile & Garments Ltd',
-                    'Mohammad Rahman',
-                    '01711000001',
-                    'apex.garments@example.com',
-                    'Gazipur',
-                    'Plot 12-14, Konabari Industrial Area, Gazipur',
-                    'Knitwear & Composite',
-                    'Tanvir Hossain',
-                    '450',
-                    '20,000 Pcs/Day',
-                    'TRAD/GZP/2026/8941',
-                    '481928374619',
-                    '001829304-0101',
-                    'Shilpo@2026',
-                    'active',
-                    '1',
-                ],
-                [
-                    'Ha-Meem Apparel Unit 3',
-                    'Abdul Karim',
-                    '01811000002',
-                    'hameem.unit3@example.com',
-                    'Ashulia',
-                    'Nischintapur, Ashulia, Savar, Dhaka',
-                    'Woven Manufacturing',
-                    'Farhan Chowdhury',
-                    '520',
-                    '25,000 Pcs/Day',
-                    'TRAD/DH/2026/1029',
-                    '918273645102',
-                    '002938475-0102',
-                    'Shilpo@2026',
-                    'active',
-                    '1',
-                ],
-                [
-                    'Standard Composite Mill',
-                    'Rafiqul Islam',
-                    '01911000003',
-                    'standard.composite@example.com',
-                    'Narayanganj',
-                    'Kanchpur, Sonargaon, Narayanganj',
-                    'Apparel & Garments',
-                    'Rafiqul Islam',
-                    '280',
-                    '12,000 Pcs/Day',
-                    'TRAD/NRG/2026/4521',
-                    '746281930281',
-                    '003847291-0103',
-                    'Shilpo@2026',
-                    'pending',
-                    '0',
-                ],
-            ];
-
-            foreach ($sampleRows as $row) {
-                fputcsv($handle, $row);
-            }
-
+            fputcsv($handle, ['code', 'name', 'area', 'address', 'phone', 'total_machines', 'plan_code', 'billing_cycle', 'qr_sticker_enabled']);
+            fputcsv($handle, ['f99', 'Padma Knitwear Ltd', 'কোনাবাড়ি, গাজীপুর', 'Plot 14, BSCIC Industrial Area', '01711009988', '28', 'g', 'm', '1']);
             fclose($handle);
-        }, 200, $headers);
+        }, 'factories-import-template.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 
-    /**
-     * Process bulk uploaded file and insert factories.
-     */
     public function importStore(Request $request): RedirectResponse
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
-            'default_status' => ['nullable', 'in:active,pending'],
-            'default_verified' => ['nullable', 'boolean'],
-            'default_password' => ['nullable', 'string', 'min:6'],
-            'skip_duplicates' => ['nullable', 'boolean'],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],
+            'skip_duplicates' => ['boolean'],
         ]);
 
-        $defaultStatus = $request->input('default_status', 'active');
-        $defaultVerified = $request->boolean('default_verified', true);
-        $defaultPassword = $request->input('default_password') ?: 'Shilpo@2026';
         $skipDuplicates = $request->boolean('skip_duplicates', true);
-
-        $uploadedFile = $request->file('file');
-        $filePath = $uploadedFile->getRealPath();
-
-        $fileHandle = fopen($filePath, 'r');
-        if (! $fileHandle) {
-            return back()->with('error', 'Unable to open and read the uploaded CSV file.');
+        $handle = fopen($request->file('file')->getRealPath(), 'r');
+        if ($handle === false) {
+            return back()->with('error', 'Unable to open uploaded CSV file.');
         }
 
-        // Detect delimiter (comma or semicolon)
-        $firstLine = fgets($fileHandle);
-        rewind($fileHandle);
+        $header = fgetcsv($handle);
+        if (! is_array($header)) {
+            fclose($handle);
 
-        $delimiter = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
-
-        // Read and normalize headers
-        $rawHeaders = fgetcsv($fileHandle, 0, $delimiter);
-        if (! $rawHeaders) {
-            fclose($fileHandle);
-
-            return back()->with('error', 'The uploaded file appears to be empty or has invalid formatting.');
+            return back()->with('error', 'CSV file is empty or invalid.');
         }
 
-        // Clean UTF-8 BOM from the first header element if present
-        $rawHeaders[0] = preg_replace('/^\xEF\xBB\xBF/', '', $rawHeaders[0]);
+        $header = array_map(fn ($col): string => strtolower(trim(preg_replace('/^\xEF\xBB\xBF/', '', (string) $col))), $header);
 
-        // Map column names to standard keys
-        $headerMap = [];
-        foreach ($rawHeaders as $index => $header) {
-            $cleanKey = strtolower(trim($header));
-            $cleanKey = str_replace([' ', '-', '.'], '_', $cleanKey);
+        $created = 0;
+        $skipped = 0;
+        $failed = 0;
+        $errors = [];
+        $line = 1;
 
-            // Aliases mapping
-            if (in_array($cleanKey, ['business_name', 'factory_name', 'company_name', 'factory'])) {
-                $headerMap['business_name'] = $index;
-            } elseif (in_array($cleanKey, ['owner_name', 'owner', 'name', 'contact_name', 'user_name'])) {
-                $headerMap['owner_name'] = $index;
-            } elseif (in_array($cleanKey, ['phone', 'mobile', 'phone_number', 'contact_phone', 'mobile_no'])) {
-                $headerMap['phone'] = $index;
-            } elseif (in_array($cleanKey, ['email', 'email_address', 'e_mail'])) {
-                $headerMap['email'] = $index;
-            } elseif (in_array($cleanKey, ['district', 'city', 'location', 'region'])) {
-                $headerMap['district'] = $index;
-            } elseif (in_array($cleanKey, ['address', 'factory_address', 'location_address'])) {
-                $headerMap['address'] = $index;
-            } elseif (in_array($cleanKey, ['industry_type', 'industry', 'type'])) {
-                $headerMap['industry_type'] = $index;
-            } elseif (in_array($cleanKey, ['contact_person', 'manager', 'person'])) {
-                $headerMap['contact_person'] = $index;
-            } elseif (in_array($cleanKey, ['total_machines', 'machines'])) {
-                $headerMap['total_machines'] = $index;
-            } elseif (in_array($cleanKey, ['daily_capacity', 'capacity'])) {
-                $headerMap['daily_capacity'] = $index;
-            } elseif (in_array($cleanKey, ['trade_license_no', 'trade_license', 'trade_no'])) {
-                $headerMap['trade_license_no'] = $index;
-            } elseif (in_array($cleanKey, ['tin_no', 'tin'])) {
-                $headerMap['tin_no'] = $index;
-            } elseif (in_array($cleanKey, ['bin_no', 'bin', 'vat_no'])) {
-                $headerMap['bin_no'] = $index;
-            } elseif (in_array($cleanKey, ['password', 'pass'])) {
-                $headerMap['password'] = $index;
-            } elseif (in_array($cleanKey, ['status', 'account_status'])) {
-                $headerMap['status'] = $index;
-            } elseif (in_array($cleanKey, ['is_verified', 'verified'])) {
-                $headerMap['is_verified'] = $index;
-            }
-        }
-
-        if (! isset($headerMap['business_name'])) {
-            fclose($fileHandle);
-
-            return back()->with('error', "CSV file must contain a 'business_name' or 'factory_name' column header.");
-        }
-
-        $importedCount = 0;
-        $skippedRows = [];
-        $rowNumber = 1; // Header was row 1
-        $processedPhones = [];
-        $processedEmails = [];
-
-        while (($row = fgetcsv($fileHandle, 0, $delimiter)) !== false) {
-            $rowNumber++;
-
-            // Skip empty rows
-            if (empty(array_filter($row, fn ($val) => trim($val) !== ''))) {
+        while (($row = fgetcsv($handle)) !== false) {
+            $line++;
+            if (count(array_filter($row, fn ($v): bool => trim((string) $v) !== '')) === 0) {
                 continue;
             }
 
-            $businessName = isset($headerMap['business_name']) ? trim($row[$headerMap['business_name']] ?? '') : '';
-            if (empty($businessName)) {
-                $skippedRows[] = "Row {$rowNumber}: Business/Factory name is missing.";
+            $assoc = [];
+            foreach ($header as $idx => $key) {
+                $assoc[$key] = trim((string) ($row[$idx] ?? ''));
+            }
+
+            $name = $assoc['name'] ?? '';
+            if ($name === '') {
+                $failed++;
+                $errors[] = "Row {$line}: Factory name is required.";
 
                 continue;
             }
 
-            $rawPhone = isset($headerMap['phone']) ? trim($row[$headerMap['phone']] ?? '') : '';
-            // Sanitize phone
-            $cleanPhone = preg_replace('/[^0-9+]/', '', $rawPhone);
-            if (empty($cleanPhone)) {
-                $skippedRows[] = "Row {$rowNumber} ('{$businessName}'): Phone number is missing or invalid.";
-
-                continue;
-            }
-
-            // Check duplicate in same CSV
-            if (in_array($cleanPhone, $processedPhones)) {
-                $skippedRows[] = "Row {$rowNumber} ('{$businessName}'): Phone {$cleanPhone} is duplicated inside this CSV file.";
-
-                continue;
-            }
-
-            // Check if phone already registered in database
-            if (User::where('phone', $cleanPhone)->exists()) {
+            $code = ($assoc['code'] ?? '') !== '' ? $assoc['code'] : $this->nextFactoryCode();
+            if (Factory::where('code', $code)->exists()) {
                 if ($skipDuplicates) {
-                    $skippedRows[] = "Row {$rowNumber} ('{$businessName}'): Phone {$cleanPhone} already exists in database (skipped).";
+                    $skipped++;
 
                     continue;
-                } else {
-                    fclose($fileHandle);
-
-                    return back()->with('error', "Import aborted at row {$rowNumber}: Phone {$cleanPhone} is already registered.");
                 }
-            }
 
-            // Process email
-            $rawEmail = isset($headerMap['email']) ? trim($row[$headerMap['email']] ?? '') : '';
-            if (empty($rawEmail) || ! filter_var($rawEmail, FILTER_VALIDATE_EMAIL)) {
-                // Generate a reliable internal fallback email using clean phone
-                $safePhone = ltrim($cleanPhone, '+');
-                $rawEmail = "factory_{$safePhone}@silposetu.internal";
-            }
-
-            // Check duplicate email
-            if (in_array($rawEmail, $processedEmails)) {
-                $skippedRows[] = "Row {$rowNumber} ('{$businessName}'): Email {$rawEmail} is duplicated in this file.";
+                $failed++;
+                $errors[] = "Row {$line}: Duplicate factory code \"{$code}\".";
 
                 continue;
             }
-
-            if (User::where('email', $rawEmail)->exists()) {
-                if ($skipDuplicates) {
-                    $skippedRows[] = "Row {$rowNumber} ('{$businessName}'): Email {$rawEmail} already exists in database (skipped).";
-
-                    continue;
-                } else {
-                    fclose($fileHandle);
-
-                    return back()->with('error', "Import aborted at row {$rowNumber}: Email {$rawEmail} is already registered.");
-                }
-            }
-
-            $ownerName = isset($headerMap['owner_name']) ? trim($row[$headerMap['owner_name']] ?? '') : '';
-            if (empty($ownerName)) {
-                $ownerName = $businessName.' Owner';
-            }
-
-            $contactPerson = isset($headerMap['contact_person']) ? trim($row[$headerMap['contact_person']] ?? '') : '';
-            if (empty($contactPerson)) {
-                $contactPerson = $ownerName;
-            }
-
-            $district = isset($headerMap['district']) ? trim($row[$headerMap['district']] ?? '') : '';
-            if (empty($district)) {
-                $district = 'Gazipur';
-            }
-
-            $address = isset($headerMap['address']) ? trim($row[$headerMap['address']] ?? '') : null;
-            $industryType = isset($headerMap['industry_type']) ? trim($row[$headerMap['industry_type']] ?? '') : 'Apparel & Garments';
-            $totalMachines = isset($headerMap['total_machines']) ? (int) trim($row[$headerMap['total_machines']] ?? 0) : 0;
-            $dailyCapacity = isset($headerMap['daily_capacity']) ? trim($row[$headerMap['daily_capacity']] ?? '') : null;
-            $tradeLicenseNo = isset($headerMap['trade_license_no']) ? trim($row[$headerMap['trade_license_no']] ?? '') : null;
-            $tinNo = isset($headerMap['tin_no']) ? trim($row[$headerMap['tin_no']] ?? '') : null;
-            $binNo = isset($headerMap['bin_no']) ? trim($row[$headerMap['bin_no']] ?? '') : null;
-
-            // Status and verified
-            $rowStatus = isset($headerMap['status']) ? strtolower(trim($row[$headerMap['status']] ?? '')) : '';
-            $status = in_array($rowStatus, ['active', 'pending', 'suspended']) ? $rowStatus : $defaultStatus;
-
-            $rowVerified = isset($headerMap['is_verified']) ? trim($row[$headerMap['is_verified']] ?? '') : '';
-            if ($rowVerified !== '') {
-                $isVerified = in_array(strtolower($rowVerified), ['1', 'true', 'yes', 'verified']);
-            } else {
-                $isVerified = $defaultVerified;
-            }
-
-            $rowPassword = isset($headerMap['password']) ? trim($row[$headerMap['password']] ?? '') : '';
-            $password = ! empty($rowPassword) ? $rowPassword : $defaultPassword;
-
-            // Generate unique customer ID
-            $customerId = User::generateUniqueCustomerId('S');
 
             try {
-                DB::transaction(function () use (
-                    $customerId,
-                    $ownerName,
-                    $cleanPhone,
-                    $rawEmail,
-                    $password,
-                    $status,
-                    $businessName,
-                    $industryType,
-                    $contactPerson,
-                    $district,
-                    $address,
-                    $totalMachines,
-                    $dailyCapacity,
-                    $isVerified,
-                    $tradeLicenseNo,
-                    $tinNo,
-                    $binNo
-                ) {
-                    $user = User::create([
-                        'customer_id' => $customerId,
-                        'name' => $ownerName,
-                        'phone' => $cleanPhone,
-                        'email' => $rawEmail,
-                        'password' => Hash::make($password),
-                        'account_type' => 'factory',
-                        'status' => $status,
-                        'is_subscribed' => true,
-                        'phone_verified_at' => now(),
-                        'email_verified_at' => now(),
-                    ]);
-
-                    Factory::create([
-                        'user_id' => $user->id,
-                        'business_name' => $businessName,
-                        'industry_type' => $industryType,
-                        'contact_person' => $contactPerson,
-                        'phone' => $cleanPhone,
-                        'email' => $rawEmail,
-                        'district' => $district,
-                        'address' => $address,
-                        'total_machines' => $totalMachines,
-                        'daily_capacity' => $dailyCapacity,
-                        'is_verified' => $isVerified,
-                        'trade_license_no' => $tradeLicenseNo,
-                        'tin_no' => $tinNo,
-                        'bin_no' => $binNo,
-                    ]);
-                });
-
-                $processedPhones[] = $cleanPhone;
-                $processedEmails[] = $rawEmail;
-                $importedCount++;
-            } catch (\Throwable $e) {
-                Log::error("Bulk import failed on row {$rowNumber}: ".$e->getMessage());
-                $skippedRows[] = "Row {$rowNumber} ('{$businessName}'): System error during database insert ({$e->getMessage()})";
+                Factory::create([
+                    'code' => $code,
+                    'name' => $name,
+                    'area' => ($assoc['area'] ?? '') !== '' ? $assoc['area'] : null,
+                    'address' => ($assoc['address'] ?? '') !== '' ? $assoc['address'] : null,
+                    'phone' => ($assoc['phone'] ?? '') !== '' ? $assoc['phone'] : null,
+                    'total_machines' => max(0, (int) (($assoc['total_machines'] ?? '') !== '' ? $assoc['total_machines'] : 24)),
+                    'plan_code' => ($assoc['plan_code'] ?? '') !== '' ? $assoc['plan_code'] : 'g',
+                    'billing_cycle' => in_array($assoc['billing_cycle'] ?? '', ['m', 'y'], true) ? $assoc['billing_cycle'] : 'm',
+                    'qr_sticker_enabled' => ($assoc['qr_sticker_enabled'] ?? '1') !== '0',
+                ]);
+                $created++;
+            } catch (Throwable $e) {
+                $failed++;
+                $errors[] = "Row {$line}: {$e->getMessage()}";
             }
         }
 
-        fclose($fileHandle);
+        fclose($handle);
 
-        $report = [
-            'imported' => $importedCount,
-            'skipped' => count($skippedRows),
-            'errors' => $skippedRows,
-        ];
-
-        session()->flash('importReport', $report);
-
-        if ($importedCount > 0) {
-            $msg = "Successfully imported {$importedCount} factories into the system.";
-            if (count($skippedRows) > 0) {
-                $msg .= ' '.count($skippedRows).' rows were skipped.';
-            }
-
-            return redirect()->route('admin.factories.index')->with('success', $msg);
-        } else {
-            return back()->with('error', 'No factories could be imported. Please review the errors below.');
-        }
+        return back()
+            ->with('success', "Import finished: {$created} created, {$skipped} skipped, {$failed} failed.")
+            ->with('importReport', [
+                'created' => $created,
+                'skipped' => $skipped,
+                'failed' => $failed,
+                'errors' => array_slice($errors, 0, 20),
+            ]);
     }
 
-    /**
-     * Show full factory KYC profile & details for admin review.
-     */
-    public function show(int $id): Response
+    private function nextFactoryCode(): string
     {
-        $user = User::with([
-            'factory.knittingTypes',
-            'factory.machines.machineType',
-            'subcontractPosts' => fn ($q) => $q->latest()->take(5),
-            'quotations' => fn ($q) => $q->latest()->take(5),
-        ])->findOrFail($id);
+        $maxNum = Factory::query()
+            ->pluck('code')
+            ->map(function (string $code): int {
+                return preg_match('/^f(\d+)$/i', $code, $m) ? (int) $m[1] : 0;
+            })
+            ->max() ?? 0;
 
-        return Inertia::render('Admin/Factories/Show', [
-            'user' => $user,
-        ]);
-    }
-
-    /**
-     * Show the factory edit form.
-     */
-    public function edit(int $id): Response
-    {
-        $user = User::with(['factory.knittingTypes', 'factory.machines.machineType'])->findOrFail($id);
-
-        $machineTypes = MachineType::query()
-            ->active()
-            ->orderBy('category')
-            ->orderBy('sort_order')
-            ->get();
-
-        $knittingTypes = KnittingType::active()->orderBy('sort_order')->get();
-
-        return Inertia::render('Admin/Factories/Edit', [
-            'user' => $user,
-            'machineTypes' => $machineTypes,
-            'knittingTypes' => $knittingTypes,
-            'districts' => self::DISTRICTS,
-            'industryTypes' => self::INDUSTRY_TYPES,
-        ]);
-    }
-
-    /**
-     * Update the specified factory and owner account.
-     */
-    public function update(Request $request, int $id): RedirectResponse
-    {
-        $user = User::with('factory')->findOrFail($id);
-        $factory = $user->factory;
-
-        $validated = $request->validate([
-            // Owner Account Fields
-            'name' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30', 'unique:users,phone,'.$user->id],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$user->id],
-            'password' => ['nullable', 'string', 'min:6'],
-            'customer_id' => ['nullable', 'string', 'max:30', 'unique:users,customer_id,'.$user->id],
-            'nid_number' => ['nullable', 'string', 'max:50'],
-            'status' => ['required', 'in:active,pending,suspended'],
-            'is_subscribed' => ['boolean'],
-
-            // Factory Details Fields
-            'business_name' => ['required', 'string', 'max:255'],
-            'logo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,svg', 'max:4096'],
-            'industry_type' => ['nullable', 'string', 'max:255'],
-            'contact_person' => ['nullable', 'string', 'max:255'],
-            'factory_phone' => ['nullable', 'string', 'max:50'],
-            'factory_email' => ['nullable', 'email', 'max:255'],
-            'district' => ['nullable', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:1000'],
-            'total_machines' => ['nullable', 'integer', 'min:0'],
-            'daily_capacity' => ['nullable', 'string', 'max:100'],
-            'is_verified' => ['boolean'],
-            'knitting_types' => ['nullable', 'array'],
-            'knitting_types.*' => ['integer'],
-            'production_capacities' => ['nullable', 'array'],
-
-            // Legal & Documents
-            'trade_license_no' => ['nullable', 'string', 'max:100'],
-            'tin_no' => ['nullable', 'string', 'max:100'],
-            'bin_no' => ['nullable', 'string', 'max:100'],
-            'trade_license_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-            'tin_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-            'bin_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-            'nid_file' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-        ]);
-
-        // Auto-aggregate capacity metrics if production_capacities is supplied
-        $totalMachines = isset($validated['total_machines']) && $validated['total_machines'] !== '' ? (int) $validated['total_machines'] : ($factory?->total_machines ?? 0);
-        $dailyCapacity = ! empty($validated['daily_capacity']) ? $validated['daily_capacity'] : null;
-
-        if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
-            $capacities = $validated['production_capacities'];
-
-            // Sum knitting & other machinery counts and aggregate total daily output
-            $calcMachines = 0;
-            $calcDaily = 0;
-            $dailyUnit = 'Kg';
-            foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
-                if (isset($capacities[$dept]) && is_array($capacities[$dept])) {
-                    foreach ($capacities[$dept] as $row) {
-                        $calcMachines += (int) ($row['no_of_machine'] ?? 0);
-                        if (! empty($row['total_capacity_per_day'])) {
-                            $calcDaily += (float) $row['total_capacity_per_day'];
-                            if (! empty($row['unit_type'])) {
-                                $dailyUnit = $row['unit_type'];
-                            }
-                        }
-                    }
-                }
-            }
-            if ($calcMachines > 0 && empty($validated['total_machines'])) {
-                $totalMachines = $calcMachines;
-            }
-            if ($calcDaily > 0 && empty($validated['daily_capacity'])) {
-                $dailyCapacity = number_format($calcDaily).' '.$dailyUnit.'/Day';
-            }
+        $candidateNum = $maxNum + 1;
+        while (Factory::where('code', "f{$candidateNum}")->exists()) {
+            $candidateNum++;
         }
 
-        // Upload Factory Logo if present
-        $logoPath = $factory?->logo;
-        if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('factory_logos', 'public');
-            $frontendStorage = base_path('../shilposetu/storage/app/public/factory_logos');
-            if (is_dir(dirname($frontendStorage))) {
-                @mkdir($frontendStorage, 0755, true);
-                @copy(storage_path('app/public/'.$logoPath), $frontendStorage.'/'.basename($logoPath));
-            }
-        }
-
-        // Upload KYC Document files if present
-        $uploadedDocs = [
-            'trade_license_file' => $factory?->trade_license_file,
-            'tin_file' => $factory?->tin_file,
-            'bin_file' => $factory?->bin_file,
-            'nid_file' => $factory?->nid_file,
-        ];
-        foreach (['trade_license_file', 'tin_file', 'bin_file', 'nid_file'] as $docKey) {
-            if ($request->hasFile($docKey)) {
-                $uploadedDocs[$docKey] = $request->file($docKey)->store('factory_docs', 'public');
-            }
-        }
-
-        DB::transaction(function () use (
-            $user,
-            $factory,
-            $validated,
-            $totalMachines,
-            $dailyCapacity,
-            $logoPath,
-            $uploadedDocs
-        ) {
-            $userUpdates = [
-                'name' => $validated['name'],
-                'phone' => $validated['phone'],
-                'email' => $validated['email'],
-                'status' => $validated['status'],
-                'nid_number' => $validated['nid_number'] ?? null,
-                'is_subscribed' => (bool) ($validated['is_subscribed'] ?? true),
-            ];
-
-            if (! empty($validated['customer_id'])) {
-                $userUpdates['customer_id'] = trim($validated['customer_id']);
-            }
-
-            if (! empty($validated['password'])) {
-                $userUpdates['password'] = Hash::make($validated['password']);
-            }
-
-            $user->update($userUpdates);
-
-            $factoryData = [
-                'business_name' => $validated['business_name'],
-                'logo' => $logoPath,
-                'industry_type' => 'Knitting',
-                'contact_person' => $validated['contact_person'] ?? $validated['name'],
-                'phone' => $validated['factory_phone'] ?? $validated['phone'],
-                'email' => $validated['factory_email'] ?? $validated['email'],
-                'district' => $validated['district'] ?? 'Gazipur',
-                'address' => $validated['address'] ?? null,
-                'total_machines' => $totalMachines,
-                'daily_capacity' => $dailyCapacity,
-                'is_verified' => (bool) ($validated['is_verified'] ?? ($validated['status'] === 'active')),
-                'trade_license_no' => $validated['trade_license_no'] ?? null,
-                'trade_license_file' => $uploadedDocs['trade_license_file'],
-                'tin_no' => $validated['tin_no'] ?? null,
-                'tin_file' => $uploadedDocs['tin_file'],
-                'bin_no' => $validated['bin_no'] ?? null,
-                'bin_file' => $uploadedDocs['bin_file'],
-                'nid_file' => $uploadedDocs['nid_file'],
-            ];
-
-            if ($factory) {
-                $factory->update($factoryData);
-                $targetFactory = $factory;
-            } else {
-                $factoryData['user_id'] = $user->id;
-                $targetFactory = Factory::create($factoryData);
-            }
-
-            if ($targetFactory) {
-                $targetFactory->knittingTypes()->sync($validated['knitting_types'] ?? []);
-
-                // Sync factory machines
-                $targetFactory->machines()->delete();
-                if (isset($validated['production_capacities']) && is_array($validated['production_capacities'])) {
-                    $order = 1;
-                    foreach (['knitting', 'yarn_dyeing', 'fabric_dyeing', 'print', 'embroidery'] as $dept) {
-                        if (! empty($validated['production_capacities'][$dept]) && is_array($validated['production_capacities'][$dept])) {
-                            foreach ($validated['production_capacities'][$dept] as $row) {
-                                $mTypeId = ! empty($row['machine_type_id']) ? (int) $row['machine_type_id'] : null;
-                                if ($mTypeId) {
-                                    $targetFactory->machines()->create([
-                                        'machine_type_id' => $mTypeId,
-                                        'category' => $dept ?: 'knitting',
-                                        'no_of_machine' => (int) ($row['no_of_machine'] ?? 1),
-                                        'capacity_per_machine' => (float) ($row['capacity_per_machine'] ?? 0),
-                                        'total_capacity_per_day' => (float) ($row['total_capacity_per_day'] ?? 0),
-                                        'unit_type' => $row['unit_type'] ?? 'Kg',
-                                        'sort_order' => $order++,
-                                    ]);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        return redirect()->route('admin.factories.show', $user->id)
-            ->with('success', "Factory '{$validated['business_name']}' updated successfully.");
-    }
-
-    /**
-     * Approve & activate factory account.
-     */
-    public function approve(int $id): RedirectResponse
-    {
-        $user = User::findOrFail($id);
-        $user->update(['status' => 'active']);
-
-        if ($user->factory) {
-            $user->factory->update(['is_verified' => true]);
-        }
-
-        return back()->with('success', "Factory '{$user->name}' has been successfully approved and verified.");
-    }
-
-    /**
-     * Block/Suspend factory account.
-     */
-    public function block(int $id): RedirectResponse
-    {
-        $user = User::findOrFail($id);
-        $user->update(['status' => 'suspended']);
-
-        return back()->with('success', "Factory '{$user->name}' has been suspended.");
-    }
-
-    /**
-     * Unblock factory account.
-     */
-    public function unblock(int $id): RedirectResponse
-    {
-        $user = User::findOrFail($id);
-        $user->update(['status' => 'active']);
-
-        return back()->with('success', "Factory '{$user->name}' has been unblocked successfully.");
+        return "f{$candidateNum}";
     }
 }

@@ -13,7 +13,7 @@ class NewSubcontractMatchNotification extends Notification
 
     public function __construct(
         public SubcontractPost $post,
-        public string $matchReason = 'স্পেশালাইজেশন ও এলাকা ম্যাচ'
+        public string $matchReason = 'ফ্যাব্রিক ও স্পেসিফিকেশন ম্যাচ'
     ) {}
 
     /**
@@ -23,7 +23,7 @@ class NewSubcontractMatchNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return ['mail'];
     }
 
     /**
@@ -31,13 +31,13 @@ class NewSubcontractMatchNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        // Always link to client portal feed for factory owners
-        $frontendUrl = env('FRONTEND_URL', 'http://silposetu.test');
-        $url = rtrim($frontendUrl, '/') . '/feed/' . $this->post->id;
-        $posterName = $this->post->factory?->business_name ?? $this->post->user?->name ?? 'শিল্পসেতু মেম্বার';
+        $frontendUrl = (string) config('app.frontend_url', 'http://silposetu.test');
+        $url = rtrim($frontendUrl, '/').'/feed/'.$this->post->id;
+        $posterName = $this->post->factory?->name ?? $this->post->user?->name ?? 'শিল্পসেতু মেম্বার';
+        $location = $this->post->location ?? 'বাংলাদেশ';
 
         return (new MailMessage)
-            ->subject("🏭 নতুন সাবকন্ট্রাক্ট কাজের সুযোগ: {$this->post->title} ({$this->post->district})")
+            ->subject("নতুন সাবকন্ট্রাক্ট কাজের সুযোগ: {$this->post->title} ({$location})")
             ->view('emails.subcontract_matched', [
                 'post' => $this->post,
                 'matchReason' => $this->matchReason,
@@ -45,31 +45,5 @@ class NewSubcontractMatchNotification extends Notification
                 'url' => $url,
                 'posterName' => $posterName,
             ]);
-    }
-
-    /**
-     * Get the array representation of the notification for database storage.
-     *
-     * @return array<string, mixed>
-     */
-    public function toDatabase(object $notifiable): array
-    {
-        return [
-            'post_id' => $this->post->id,
-            'title' => $this->post->title,
-            'category' => $this->post->category,
-            'target_quantity' => $this->post->target_quantity,
-            'unit' => $this->post->unit,
-            'district' => $this->post->district,
-            'target_rate' => $this->post->target_rate,
-            'rate_negotiable' => (bool) $this->post->rate_negotiable,
-            'is_urgent' => (bool) $this->post->is_urgent,
-            'deadline' => $this->post->deadline ? (is_string($this->post->deadline) ? $this->post->deadline : $this->post->deadline->format('Y-m-d')) : null,
-            'poster_name' => $this->post->factory?->business_name ?? $this->post->user?->name ?? 'Verified Industry Member',
-            'poster_district' => $this->post->factory?->district ?? $this->post->district,
-            'match_reason' => $this->matchReason,
-            'action_url' => '/feed/' . $this->post->id,
-            'type' => 'subcontract_match',
-        ];
     }
 }
