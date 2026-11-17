@@ -63,6 +63,10 @@ interface DashboardStats {
     total_qc_inspections: number;
     pending_qc_signs: number;
     total_challans: number;
+    total_rolls: number;
+    total_employees: number;
+    present_attendances: number;
+    low_stock_items: number;
     unread_threads: number;
     total_billed_tk: number;
     total_collected_tk: number;
@@ -265,14 +269,14 @@ export default function Dashboard({
                         </div>
                         <div className="flex flex-wrap gap-3 text-xs pt-1">
                             <Link
-                                href={route('admin.factories.index')}
-                                className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold"
+                                href={route('admin.factories.index', { health: 'expiring' })}
+                                className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold hover:ring-1 ring-amber-400"
                             >
                                 {stats.expiring_trials} expiring trials (&le; 7d)
                             </Link>
                             <Link
-                                href={route('admin.factories.index')}
-                                className={`px-2.5 py-1 rounded-lg font-semibold ${
+                                href={route('admin.factories.index', { health: 'over_quota' })}
+                                className={`px-2.5 py-1 rounded-lg font-semibold hover:ring-1 ring-rose-400 ${
                                     stats.over_quota_factories > 0
                                         ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'
                                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
@@ -285,23 +289,52 @@ export default function Dashboard({
 
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Floor ERP & Financial Pulse</h3>
-                            <Link href={route('admin.bills.index')} className="text-xs font-semibold text-blue-600 hover:underline">
-                                Billing Hub
-                            </Link>
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Floor ERP &amp; Financial Pulse</h3>
+                            <div className="flex items-center gap-3 text-xs font-semibold">
+                                <Link href={route('admin.floor-erp.index')} className="text-blue-600 hover:underline">
+                                    Floor ERP
+                                </Link>
+                                <Link href={route('admin.workforce.index')} className="text-emerald-600 hover:underline">
+                                    Workforce
+                                </Link>
+                                <Link href={route('admin.bills.index')} className="text-indigo-600 hover:underline">
+                                    Billing Hub
+                                </Link>
+                            </div>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
-                            <Link href={route('admin.orders.index')} className="p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 hover:ring-1 ring-blue-400">
+                            <Link href={route('admin.floor-erp.index', { tab: 'qc' })} className="p-2.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 hover:ring-1 ring-blue-400">
                                 <p className="text-base font-bold text-blue-700 dark:text-blue-300">{stats.total_qc_inspections}</p>
                                 <p className="text-[10px] text-slate-500">QC ({stats.pending_qc_signs} unsigned)</p>
                             </Link>
-                            <Link href={route('admin.orders.index')} className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 hover:ring-1 ring-emerald-400">
+                            <Link href={route('admin.floor-erp.index', { tab: 'challans' })} className="p-2.5 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/40 hover:ring-1 ring-emerald-400">
                                 <p className="text-base font-bold text-emerald-700 dark:text-emerald-300">{stats.total_challans}</p>
                                 <p className="text-[10px] text-slate-500">Challans</p>
                             </Link>
-                            <Link href={route('admin.bills.index')} className="p-2.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 hover:ring-1 ring-indigo-400">
+                            <Link href={route('admin.floor-erp.index', { tab: 'rolls' })} className="p-2.5 rounded-xl bg-cyan-50/70 dark:bg-cyan-950/40 hover:ring-1 ring-cyan-400">
+                                <p className="text-base font-bold text-cyan-700 dark:text-cyan-300">{stats.total_rolls}</p>
+                                <p className="text-[10px] text-slate-500">Fabric Rolls</p>
+                            </Link>
+                            <Link href={route('admin.workforce.index')} className="p-2.5 rounded-xl bg-teal-50/70 dark:bg-teal-950/40 hover:ring-1 ring-teal-400">
+                                <p className="text-base font-bold text-teal-700 dark:text-teal-300">{stats.total_employees}</p>
+                                <p className="text-[10px] text-slate-500">Staff ({stats.present_attendances} present)</p>
+                            </Link>
+                            <Link href={route('admin.bills.index')} className="p-2.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 hover:ring-1 ring-indigo-400 col-span-2">
                                 <p className="text-base font-bold text-indigo-700 dark:text-indigo-300">৳{Math.round(stats.total_billed_tk).toLocaleString()}</p>
                                 <p className="text-[10px] text-slate-500">Billed ({Math.round(stats.total_collected_tk).toLocaleString()} paid)</p>
+                            </Link>
+                            <Link
+                                href={route('admin.bills.index', { tab: 'store', stock_filter: 'low' })}
+                                className={`p-2.5 rounded-xl hover:ring-1 ring-rose-400 ${
+                                    stats.low_stock_items > 0
+                                        ? 'bg-rose-50/70 dark:bg-rose-950/40'
+                                        : 'bg-slate-50 dark:bg-slate-800/60'
+                                }`}
+                            >
+                                <p className={`text-base font-bold ${stats.low_stock_items > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-slate-700 dark:text-slate-200'}`}>
+                                    {stats.low_stock_items}
+                                </p>
+                                <p className="text-[10px] text-slate-500">Low Stock Items</p>
                             </Link>
                             <Link href={route('admin.threads.index')} className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 hover:ring-1 ring-amber-400">
                                 <p className="text-base font-bold text-amber-700 dark:text-amber-300">{stats.unread_threads}</p>

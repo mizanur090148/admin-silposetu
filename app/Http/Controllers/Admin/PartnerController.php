@@ -59,6 +59,8 @@ class PartnerController extends Controller
         return Inertia::render('Admin/Partners/Index', [
             'partners' => $partners,
             'partnerUsers' => $partnerUsers,
+            'existingPartnerUserIds' => Partner::whereNotNull('user_id')->pluck('user_id')->values(),
+            'existingPartnerCodes' => Partner::pluck('partner_code')->values(),
             'summary' => $summary,
             'users' => User::orderBy('name')->get(['id', 'name', 'phone', 'role']),
             'filters' => [
@@ -107,6 +109,29 @@ class PartnerController extends Controller
         $partner->update($validated);
 
         return back()->with('success', "Partner {$partner->partner_code} updated.");
+    }
+
+    public function recordPayout(Request $request, int $id): RedirectResponse
+    {
+        $partner = Partner::findOrFail($id);
+
+        $validated = $request->validate([
+            'amount_tk' => ['required', 'numeric', 'min:1'],
+        ]);
+
+        $amount = round((float) $validated['amount_tk'], 2);
+        $balance = round((float) $partner->balance_commission_tk, 2);
+
+        if ($amount > $balance) {
+            return back()->with('error', "Payout amount (৳{$amount}) exceeds available balance (৳{$balance}).");
+        }
+
+        $partner->update([
+            'withdrawn_commission_tk' => round((float) $partner->withdrawn_commission_tk + $amount, 2),
+            'balance_commission_tk' => max(0.0, round($balance - $amount, 2)),
+        ]);
+
+        return back()->with('success', "Recorded ৳{$amount} payout for partner {$partner->partner_code}.");
     }
 
     public function destroy(int $id): RedirectResponse

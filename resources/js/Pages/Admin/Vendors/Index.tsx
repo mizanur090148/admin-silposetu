@@ -42,6 +42,7 @@ interface Props {
     vendors: PaginatedData<Vendor>;
     vendorParties?: VendorPartyRow[];
     vendorUsers?: VendorUserRow[];
+    existingVendorCodes?: string[];
     counts: {
         total: number;
         verified: number;
@@ -57,7 +58,7 @@ interface Props {
     };
 }
 
-export default function Index({ vendors, vendorParties = [], vendorUsers = [], counts, users, factories, filters }: Props) {
+export default function Index({ vendors, vendorParties = [], vendorUsers = [], existingVendorCodes = [], counts, users, factories, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<Vendor | null>(null);
@@ -369,6 +370,12 @@ export default function Index({ vendors, vendorParties = [], vendorUsers = [], c
                                 Buying houses &amp; buyers recorded by factories (`parties` table with `type = ven`).
                             </p>
                         </div>
+                        <Link
+                            href={route('admin.workforce.index', { tab: 'parties' })}
+                            className="text-xs font-semibold text-blue-600 hover:underline"
+                        >
+                            Manage All Parties →
+                        </Link>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse text-xs">
@@ -420,13 +427,19 @@ export default function Index({ vendors, vendorParties = [], vendorUsers = [], c
                                             </span>
                                         </td>
                                         <td className="py-3 px-4 text-right">
-                                            <button
-                                                type="button"
-                                                onClick={() => openCreateFromParty(p)}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white text-[11px] font-semibold hover:bg-slate-800"
-                                            >
-                                                <Plus className="w-3 h-3" /> Add to Directory
-                                            </button>
+                                            {existingVendorCodes.includes(p.code) ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-[11px] font-bold">
+                                                    <CheckCircle2 className="w-3 h-3" /> In Directory
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openCreateFromParty(p)}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white text-[11px] font-semibold hover:bg-slate-800"
+                                                >
+                                                    <Plus className="w-3 h-3" /> Add to Directory
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

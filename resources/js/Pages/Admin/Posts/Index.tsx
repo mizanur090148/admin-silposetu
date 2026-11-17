@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
-import { ClipboardList, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { ClipboardList, Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { FactoryRef, PaginatedData, SubcontractPost } from '@/types';
 import { formatDeadline } from '@/utils/date';
 
@@ -234,6 +234,13 @@ export default function Index({ posts, counts, factories, filters }: Props) {
                                                     className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
                                                 >
                                                     <Eye className="w-3.5 h-3.5 text-blue-600" />
+                                                </Link>
+                                                <Link
+                                                    href={route('admin.posts.edit', post.id)}
+                                                    title="Edit Post"
+                                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                                                >
+                                                    <Pencil className="w-3.5 h-3.5" />
                                                 </Link>
                                                 <button
                                                     type="button"

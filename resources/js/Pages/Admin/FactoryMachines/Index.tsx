@@ -1,9 +1,9 @@
 import React, { useState, FormEvent } from 'react';
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
-import { Cpu, Search, Plus, Pencil, Trash2, Radio, Upload, Download, X } from 'lucide-react';
-import { FactoryMachine, FactoryRef, PaginatedData } from '@/types';
+import { Cpu, Search, Plus, Pencil, Trash2, Radio, Upload, Download, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FactoryMachine, FactoryRef, PageProps, PaginatedData } from '@/types';
 import { parseMachineStatus } from '@/utils/labels';
 
 interface Props {
@@ -28,6 +28,7 @@ interface Props {
 }
 
 export default function Index({ machines, stats, factories, filters }: Props) {
+    const { flash } = usePage<PageProps>().props;
     const [search, setSearch] = useState(filters.search || '');
     const [editing, setEditing] = useState<FactoryMachine | null>(null);
     const [showModal, setShowModal] = useState(false);
@@ -162,6 +163,38 @@ export default function Index({ machines, stats, factories, filters }: Props) {
                         <p className="text-xl font-bold mt-1">{stats.total_capacity_kg.toLocaleString()} kg</p>
                     </div>
                 </div>
+
+                {flash?.importReport && (
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 text-xs">
+                        <div className="flex items-center gap-2 font-bold text-sm">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Machine CSV Import Report
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 text-center">
+                            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+                                <p className="text-lg font-bold">{flash.importReport.created}</p>
+                                <p>Created / Updated</p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300">
+                                <p className="text-lg font-bold">{flash.importReport.skipped}</p>
+                                <p>Skipped</p>
+                            </div>
+                            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">
+                                <p className="text-lg font-bold">{flash.importReport.failed}</p>
+                                <p>Failed</p>
+                            </div>
+                        </div>
+                        {flash.importReport.errors.length > 0 && (
+                            <ul className="space-y-1 text-rose-600 dark:text-rose-400">
+                                {flash.importReport.errors.map((err, i) => (
+                                    <li key={i} className="flex items-start gap-1.5">
+                                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                        <span>{err}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                )}
 
                 {/* Filters */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col xl:flex-row xl:items-center justify-between gap-3">

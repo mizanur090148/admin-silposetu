@@ -21,10 +21,14 @@ class Employee extends Model
         'id_no',
         'name',
         'mobile',
+        'address',
+        'designation',
         'shift',
         'machine_assigned',
         'daily_wage',
+        'joining_date',
         'status',
+        'notes',
     ];
 
     /**

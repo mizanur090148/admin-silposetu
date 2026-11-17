@@ -122,4 +122,9 @@ class Factory extends Model
     {
         return $this->hasMany(MessageThread::class, 'factory_code', 'code');
     }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(FactoryAttendance::class, 'factory_id');
+    }
 }

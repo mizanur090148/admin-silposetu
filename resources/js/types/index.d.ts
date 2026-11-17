@@ -163,12 +163,17 @@ export interface OrderLine {
     grey_dia: string | null;
     dia_gauge: string | null;
     flat_size: string | null;
+    piece_weight_gm?: string | number | null;
+    flat_design?: string | null;
     machines_json: string[] | null;
+    yarns_json?: Array<Record<string, unknown>> | null;
 }
 
 export interface ProductionLog {
     id: number;
+    subcontract_order_id?: number;
     order_no: string;
+    placement_index?: number;
     date_label: string;
     shift: string;
     machine_code: string;
@@ -177,6 +182,24 @@ export interface ProductionLog {
     rolls_count: number;
     yarn_lot: string | null;
     fault_code: string | null;
+    order?: SubcontractOrderSummary & { factory?: FactoryRef | null };
+}
+
+export interface FabricRollRow {
+    id: number;
+    roll_no: string;
+    jc_seq: string;
+    order_no: string;
+    placement_index: number;
+    machine_code: string;
+    date_label: string;
+    shift: string;
+    operator_name: string | null;
+    weight_kg: string | number;
+    yarn_lot: string | null;
+    faults_json: Record<string, unknown> | unknown[] | null;
+    challan_no: string | null;
+    order?: SubcontractOrderSummary | null;
 }
 
 export interface QcSign {
@@ -184,6 +207,12 @@ export interface QcSign {
     by?: string;
     at?: string;
     note?: string;
+}
+
+export interface ChallanSign {
+    by?: string;
+    at?: string;
+    got?: number;
 }
 
 export interface QcInspection {
@@ -201,6 +230,7 @@ export interface QcInspection {
     factory_sign_json: QcSign | null;
     vendor_sign_json: QcSign | null;
     action_taken: string | null;
+    order?: (SubcontractOrderSummary & { factory?: FactoryRef | null }) | null;
 }
 
 export interface DeliveryChallan {
@@ -210,12 +240,14 @@ export interface DeliveryChallan {
     party_code: string;
     order_no: string;
     date_label: string;
-    rolls_json: unknown[] | null;
+    rolls_json: string[] | null;
     vehicle_no: string;
     driver_name: string | null;
     driver_phone: string | null;
-    factory_sign_json: QcSign | null;
-    vendor_sign_json: QcSign | null;
+    factory_sign_json: ChallanSign | null;
+    vendor_sign_json: ChallanSign | null;
+    factory?: FactoryRef | null;
+    order?: SubcontractOrderSummary | null;
 }
 
 export interface SubcontractOrder {
@@ -243,18 +275,42 @@ export interface SubcontractOrder {
     order_date: string | null;
     delivery_due_date: string | null;
     complete_date: string | null;
+    today_prod_kg?: string | number;
+    week_prod_json?: number[] | null;
     machines_json: string[] | null;
+    challans_json?: string[] | null;
     yarn_in_json: Array<Record<string, unknown>> | null;
+    yarn_returns_json?: Array<Record<string, unknown>> | null;
+    yarn_requests_json?: Record<string, Record<string, unknown>> | null;
     factory?: FactoryRef | null;
     party?: { id: number; code: string; name: string; type: string; phone?: string | null; payment_terms?: string | null } | null;
     lines?: OrderLine[];
     productions?: ProductionLog[];
     qc_inspections?: QcInspection[];
     delivery_challans?: DeliveryChallan[];
+    fabric_rolls?: FabricRollRow[];
     lines_count?: number;
     qc_inspections_count?: number;
     productions_count?: number;
     delivery_challans_count?: number;
+    fabric_rolls_count?: number;
+}
+
+export interface BillLineItem {
+    o?: string;
+    fab?: string;
+    kg?: number;
+    rate?: number;
+    amount?: number;
+}
+
+export interface BillPaymentItem {
+    d?: string;
+    rv?: string;
+    amt?: number;
+    amount?: number;
+    mode?: string;
+    pend?: boolean;
 }
 
 export interface BillSummaryRow {
@@ -268,8 +324,74 @@ export interface BillSummaryRow {
     paid_tk: number;
     pending_tk: number;
     due_tk: number;
+    lines_json?: BillLineItem[];
+    payments_json?: BillPaymentItem[];
     lines_count?: number;
     payments_count?: number;
+    factory?: FactoryRef | null;
+}
+
+export interface StoreIssueLogRow {
+    id: number;
+    item_code: string;
+    date_label: string;
+    machine_code: string;
+    qty: number;
+    issued_by: string;
+    item?: { id: number; item_code: string; name: string; unit: string } | null;
+}
+
+export interface EmployeeRow {
+    id: number;
+    factory_id: number;
+    employee_type: string;
+    id_no: string | null;
+    name: string;
+    mobile: string | null;
+    address: string | null;
+    designation: string | null;
+    shift: string;
+    machine_assigned: string | null;
+    daily_wage: string | number;
+    joining_date: string | null;
+    status: string;
+    notes: string | null;
+    factory?: FactoryRef | null;
+}
+
+export interface FactoryAttendanceRow {
+    id: number;
+    factory_id: number;
+    worker_name: string;
+    role_type: string;
+    shift: string;
+    status: string;
+    attendance_date: string;
+    in_time: string | null;
+    out_time: string | null;
+    overtime_hours: string | number;
+    daily_wage_tk: string | number;
+    note: string | null;
+    factory?: FactoryRef | null;
+}
+
+export interface PartyRow {
+    id: number;
+    factory_id: number;
+    code: string;
+    name: string;
+    type: string;
+    address: string | null;
+    contact_person: string | null;
+    phone: string | null;
+    email: string | null;
+    bin_tin: string | null;
+    default_rate_tk: string | number;
+    payment_terms: string;
+    opening_balance: string | number;
+    added_date: string | null;
+    is_active: boolean;
+    subcontract_orders_count?: number;
     factory?: FactoryRef | null;
 }
 
@@ -529,6 +651,7 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
         newRfqs: number;
         pendingAds: number;
         unreadThreads?: number;
+        pendingQc?: number;
     };
     flash?: {
         success?: string;

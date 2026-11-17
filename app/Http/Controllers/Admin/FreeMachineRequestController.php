@@ -17,8 +17,8 @@ class FreeMachineRequestController extends Controller
     public function index(Request $request): Response
     {
         $search = trim((string) $request->input('search', ''));
-        $status = $request->input('status', 'all');
-        $factoryId = $request->input('factory_id', 'all');
+        $status = (string) $request->input('status', 'all');
+        $factoryId = (string) $request->input('factory_id', 'all');
         $perPage = min(max((int) $request->input('per_page', 15), 5), 100);
 
         $query = FreeMachineRequest::query()
@@ -73,11 +73,58 @@ class FreeMachineRequestController extends Controller
         ]);
     }
 
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'request_no' => ['nullable', 'string', 'max:40', Rule::unique('free_machine_requests', 'request_no')],
+            'factory_id' => ['required', 'integer', 'exists:factories,id'],
+            'party_code' => ['required', 'string', 'max:40'],
+            'contact_person' => ['required', 'string', 'max:120'],
+            'fabrication' => ['required', 'string', 'max:255'],
+            'qty_kg' => ['required', 'numeric', 'min:0.1'],
+            'machines_needed' => ['required', 'integer', 'min:1'],
+            'spec_label' => ['nullable', 'string', 'max:100'],
+            'start_date' => ['nullable', 'date'],
+            'message' => ['nullable', 'string', 'max:2000'],
+            'status' => ['required', 'string', Rule::in(['new', 'open', 'conf', 'rejected', 'done'])],
+        ]);
+
+        $requestNo = trim((string) ($validated['request_no'] ?? ''));
+        if ($requestNo === '') {
+            $seq = FreeMachineRequest::count() + 101;
+            while (FreeMachineRequest::where('request_no', 'FMR-'.$seq)->exists()) {
+                $seq++;
+            }
+            $requestNo = 'FMR-'.$seq;
+        }
+
+        FreeMachineRequest::create([
+            'request_no' => $requestNo,
+            'factory_id' => $validated['factory_id'],
+            'party_code' => trim($validated['party_code']),
+            'contact_person' => trim($validated['contact_person']),
+            'fabrication' => trim($validated['fabrication']),
+            'qty_kg' => $validated['qty_kg'],
+            'machines_needed' => $validated['machines_needed'],
+            'spec_label' => ! empty($validated['spec_label']) ? trim($validated['spec_label']) : null,
+            'start_date' => $validated['start_date'] ?? null,
+            'message' => $validated['message'] ?? null,
+            'status' => $validated['status'],
+        ]);
+
+        return back()->with('success', "Machine request {$requestNo} logged.");
+    }
+
     public function update(Request $request, int $id): RedirectResponse
     {
         $machineRequest = FreeMachineRequest::findOrFail($id);
 
         $validated = $request->validate([
+            'factory_id' => ['nullable', 'integer', 'exists:factories,id'],
+            'party_code' => ['nullable', 'string', 'max:40'],
+            'contact_person' => ['nullable', 'string', 'max:120'],
+            'fabrication' => ['nullable', 'string', 'max:255'],
+            'qty_kg' => ['nullable', 'numeric', 'min:0.1'],
             'status' => ['required', 'string', Rule::in(['new', 'open', 'conf', 'rejected', 'done'])],
             'machines_needed' => ['nullable', 'integer', 'min:1'],
             'spec_label' => ['nullable', 'string', 'max:100'],
@@ -86,10 +133,17 @@ class FreeMachineRequestController extends Controller
         ]);
 
         $machineRequest->update([
+            'factory_id' => $validated['factory_id'] ?? $machineRequest->factory_id,
+            'party_code' => ! empty($validated['party_code']) ? trim($validated['party_code']) : $machineRequest->party_code,
+            'contact_person' => ! empty($validated['contact_person']) ? trim($validated['contact_person']) : $machineRequest->contact_person,
+            'fabrication' => ! empty($validated['fabrication']) ? trim($validated['fabrication']) : $machineRequest->fabrication,
+            'qty_kg' => $validated['qty_kg'] ?? $machineRequest->qty_kg,
             'status' => $validated['status'],
             'machines_needed' => $validated['machines_needed'] ?? $machineRequest->machines_needed,
-            'spec_label' => ! empty($validated['spec_label']) ? $validated['spec_label'] : $machineRequest->spec_label,
-            'start_date' => $validated['start_date'] ?? $machineRequest->start_date,
+            'spec_label' => array_key_exists('spec_label', $validated) && $validated['spec_label'] !== ''
+                ? $validated['spec_label']
+                : $machineRequest->spec_label,
+            'start_date' => array_key_exists('start_date', $validated) ? $validated['start_date'] : $machineRequest->start_date,
             'message' => $validated['message'] ?? $machineRequest->message,
         ]);
 

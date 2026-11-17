@@ -19,6 +19,7 @@ interface SearchableSelectProps {
     disabled?: boolean;
     id?: string;
     className?: string;
+    emptyText?: string;
 }
 
 export default function SearchableSelect({
@@ -32,6 +33,7 @@ export default function SearchableSelect({
     disabled = false,
     id,
     className = '',
+    emptyText = 'No matching options',
 }: SearchableSelectProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -184,7 +186,7 @@ export default function SearchableSelect({
                     <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 p-1">
                         {filteredOptions.length === 0 ? (
                             <div className="px-3 py-6 text-center text-xs text-slate-400">
-                                <p className="font-semibold text-slate-600 dark:text-slate-400">No machine types match</p>
+                                <p className="font-semibold text-slate-600 dark:text-slate-400">{emptyText}</p>
                                 <p className="text-[11px] mt-0.5 text-slate-400">"{searchTerm}"</p>
                             </div>
                         ) : (

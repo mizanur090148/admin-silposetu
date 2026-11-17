@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import React, { useState, FormEvent } from 'react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
-import { CheckCheck, Eye, MessageSquareText, Search } from 'lucide-react';
+import { CheckCheck, Eye, MessageSquareText, Plus, Search, Trash2, X } from 'lucide-react';
 import { FactoryRef, MessageThreadRow, PaginatedData } from '@/types';
+
+interface OrderRef {
+    id: number;
+    order_no: string;
+    factory_id: number;
+    party_code: string;
+    buyer: string | null;
+}
 
 interface Props {
     threads: PaginatedData<MessageThreadRow>;
@@ -13,6 +21,7 @@ interface Props {
         total_unread_messages: number;
     };
     factories: FactoryRef[];
+    orders: OrderRef[];
     filters: {
         search: string;
         factory_code: string;
@@ -21,8 +30,45 @@ interface Props {
     };
 }
 
-export default function Index({ threads, summary, factories, filters }: Props) {
+export default function Index({ threads, summary, factories, orders, filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
+    const [showCreateModal, setShowCreateModal] = useState(false);
+
+    const createForm = useForm({
+        thread_code: '',
+        factory_code: factories[0]?.code || '',
+        party_code: '',
+        order_no: '',
+        title: '',
+        message: '',
+    });
+
+    const handleOrderPreset = (orderNo: string) => {
+        const matchedOrder = orders.find((o) => o.order_no === orderNo);
+        if (!matchedOrder) {
+            createForm.setData('order_no', '');
+            return;
+        }
+        const matchedFactory = factories.find((f) => f.id === matchedOrder.factory_id);
+        createForm.setData((prev) => ({
+            ...prev,
+            order_no: matchedOrder.order_no,
+            factory_code: matchedFactory?.code || prev.factory_code,
+            party_code: matchedOrder.party_code || prev.party_code,
+            title: prev.title || `Order ${matchedOrder.order_no}${matchedOrder.buyer ? ` (${matchedOrder.buyer})` : ''}`,
+        }));
+    };
+
+    const submitCreate = (e: FormEvent) => {
+        e.preventDefault();
+        createForm.post(route('admin.threads.store'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowCreateModal(false);
+                createForm.reset();
+            },
+        });
+    };
 
     const applyFilter = (overrides: Record<string, string | number>) => {
         router.get(route('admin.threads.index'), { ...filters, search, ...overrides }, { preserveState: true, replace: true });
@@ -87,6 +133,13 @@ export default function Index({ threads, summary, factories, filters }: Props) {
                         </select>
                         <button type="submit" className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-900 dark:bg-slate-700 text-white">
                             Search
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowCreateModal(true)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-blue-600 hover:bg-blue-500 text-white ml-auto"
+                        >
+                            <Plus className="w-3.5 h-3.5" /> New Thread
                         </button>
                     </form>
                 </div>
@@ -167,6 +220,18 @@ export default function Index({ threads, summary, factories, filters }: Props) {
                                                 >
                                                     <Eye className="w-3.5 h-3.5" />
                                                 </Link>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        if (confirm(`Delete thread ${t.thread_code}?`)) {
+                                                            router.delete(route('admin.threads.destroy', t.id), { preserveScroll: true });
+                                                        }
+                                                    }}
+                                                    title="Delete Thread"
+                                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-600"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -194,6 +259,122 @@ export default function Index({ threads, summary, factories, filters }: Props) {
                     />
                 </div>
             </div>
+
+            {showCreateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <form
+                        onSubmit={submitCreate}
+                        className="w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4 text-xs shadow-xl"
+                    >
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white">Start New Order / Support Thread</h3>
+                            <button type="button" onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="sm:col-span-2">
+                                <label className="block font-semibold mb-1">Link to Existing Order (Optional Preset)</label>
+                                <select
+                                    value={createForm.data.order_no}
+                                    onChange={(e) => handleOrderPreset(e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    <option value="">General Thread (no linked order)</option>
+                                    {orders.map((o) => (
+                                        <option key={o.id} value={o.order_no}>
+                                            {o.order_no} — {o.party_code}
+                                            {o.buyer ? ` (${o.buyer})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Factory *</label>
+                                <select
+                                    value={createForm.data.factory_code}
+                                    onChange={(e) => createForm.setData('factory_code', e.target.value)}
+                                    required
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    <option value="">Select Factory...</option>
+                                    {factories.map((f) => (
+                                        <option key={f.id} value={f.code}>
+                                            {f.code} — {f.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {createForm.errors.factory_code && <p className="text-rose-500 mt-1">{createForm.errors.factory_code}</p>}
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Party / Buyer Code *</label>
+                                <input
+                                    type="text"
+                                    value={createForm.data.party_code}
+                                    onChange={(e) => createForm.setData('party_code', e.target.value)}
+                                    placeholder="e.g. PTY-01 or ADMIN"
+                                    required
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                                {createForm.errors.party_code && <p className="text-rose-500 mt-1">{createForm.errors.party_code}</p>}
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Thread Code (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={createForm.data.thread_code}
+                                    onChange={(e) => createForm.setData('thread_code', e.target.value)}
+                                    placeholder="Auto-generated (TH-...)"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                                {createForm.errors.thread_code && <p className="text-rose-500 mt-1">{createForm.errors.thread_code}</p>}
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Thread Title *</label>
+                                <input
+                                    type="text"
+                                    value={createForm.data.title}
+                                    onChange={(e) => createForm.setData('title', e.target.value)}
+                                    placeholder="e.g. GSM & Roll Check Follow-up"
+                                    required
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                                {createForm.errors.title && <p className="text-rose-500 mt-1">{createForm.errors.title}</p>}
+                            </div>
+                            <div className="sm:col-span-2">
+                                <label className="block font-semibold mb-1">Initial Message *</label>
+                                <textarea
+                                    rows={3}
+                                    value={createForm.data.message}
+                                    onChange={(e) => createForm.setData('message', e.target.value)}
+                                    placeholder="Write the opening message..."
+                                    required
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                                {createForm.errors.message && <p className="text-rose-500 mt-1">{createForm.errors.message}</p>}
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowCreateModal(false)}
+                                className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 font-semibold"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={createForm.processing}
+                                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold disabled:opacity-50"
+                            >
+                                Create Thread
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
         </AdminLayout>
     );
 }

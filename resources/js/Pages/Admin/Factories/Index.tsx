@@ -32,6 +32,7 @@ interface Props {
         plan_code: string;
         billing_cycle: string;
         qr_sticker: string;
+        health: string;
         per_page: number;
     };
 }
@@ -132,6 +133,17 @@ export default function Index({ factories, summary, plans, filters }: Props) {
                             <option value="all">QR: Any</option>
                             <option value="1">QR Enabled</option>
                             <option value="0">QR Disabled</option>
+                        </select>
+
+                        <select
+                            value={filters.health || 'all'}
+                            onChange={(e) => applyFilter({ health: e.target.value, page: 1 })}
+                            className="py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                        >
+                            <option value="all">Health: All</option>
+                            <option value="expiring">Expiring Trials (&le;7d)</option>
+                            <option value="expired">Expired Trials</option>
+                            <option value="over_quota">Over Machine Quota</option>
                         </select>
 
                         <button

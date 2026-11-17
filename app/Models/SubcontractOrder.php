@@ -102,4 +102,9 @@ class SubcontractOrder extends Model
     {
         return $this->hasMany(DeliveryChallan::class, 'order_no', 'order_no');
     }
+
+    public function fabricRolls(): HasMany
+    {
+        return $this->hasMany(FabricRoll::class, 'order_no', 'order_no');
+    }
 }

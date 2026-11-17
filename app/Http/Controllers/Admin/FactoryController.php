@@ -7,6 +7,7 @@ use App\Models\Bill;
 use App\Models\DeliveryChallan;
 use App\Models\Employee;
 use App\Models\Factory;
+use App\Models\FactoryAttendance;
 use App\Models\FactoryExpense;
 use App\Models\FactoryMachine;
 use App\Models\Party;
@@ -32,11 +33,32 @@ class FactoryController extends Controller
         $planCode = $request->input('plan_code', 'all');
         $billingCycle = $request->input('billing_cycle', 'all');
         $qrFilter = $request->input('qr_sticker', 'all');
+        $healthFilter = (string) $request->input('health', 'all');
         $perPage = min(max((int) $request->input('per_page', 15), 5), 100);
+
+        $healthIds = null;
+        if (in_array($healthFilter, ['expiring', 'expired', 'over_quota'], true)) {
+            $healthIds = Factory::query()
+                ->withCount('factoryMachines')
+                ->get(['id', 'plan_code', 'total_machines', 'trial_ends_at'])
+                ->filter(function (Factory $f) use ($healthFilter): bool {
+                    $health = PlanCatalog::factoryHealth($f, (int) $f->factory_machines_count);
+                    if ($healthFilter === 'over_quota') {
+                        return $health['over_quota'];
+                    }
+
+                    return $health['trial_state'] === $healthFilter;
+                })
+                ->pluck('id')
+                ->all();
+        }
 
         $query = Factory::query()
             ->with('owner:id,name,phone,email')
             ->withCount(['factoryMachines', 'users', 'freeMachineRequests', 'subcontractPosts', 'subcontractOrders'])
+            ->when($healthIds !== null, function ($q) use ($healthIds): void {
+                $q->whereIn('id', $healthIds ?: [-1]);
+            })
             ->when($search !== '', function ($q) use ($search): void {
                 $q->where(function ($sub) use ($search): void {
                     $sub->where('name', 'like', "%{$search}%")
@@ -77,6 +99,7 @@ class FactoryController extends Controller
                 'plan_code' => $planCode,
                 'billing_cycle' => $billingCycle,
                 'qr_sticker' => $qrFilter,
+                'health' => $healthFilter,
                 'per_page' => $perPage,
             ],
         ]);
@@ -209,7 +232,7 @@ class FactoryController extends Controller
         $bills = Bill::where('factory_code', $factory->code)->latest('id')->get();
         $billedTk = 0.0;
         $paidTk = 0.0;
-        $recentBills = $bills->take(5)->map(function (Bill $bill) use (&$billedTk, &$paidTk): array {
+        $recentBills = $bills->take(5)->map(function (Bill $bill): array {
             $t = PlanCatalog::billTotals($bill);
 
             return [
@@ -236,6 +259,7 @@ class FactoryController extends Controller
             'total_orders' => SubcontractOrder::where('factory_id', $factory->id)->count(),
             'parties_count' => Party::where('factory_id', $factory->id)->count(),
             'employees_count' => Employee::where('factory_id', $factory->id)->count(),
+            'attendances_count' => FactoryAttendance::where('factory_id', $factory->id)->count(),
             'qc_count' => QcInspection::whereIn('order_no', $orderNos)->count(),
             'challans_count' => DeliveryChallan::where('factory_code', $factory->code)->count(),
             'billed_tk' => round($billedTk, 2),

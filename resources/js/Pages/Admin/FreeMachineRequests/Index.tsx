@@ -2,7 +2,7 @@ import React, { FormEvent, useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
-import { Cpu, Inbox, Pencil, Radio, Search, Trash2, X } from 'lucide-react';
+import { Cpu, Inbox, Pencil, Plus, Radio, Search, Trash2, X } from 'lucide-react';
 import { FactoryMachine, FactoryRef, FreeMachineRequest, PaginatedData } from '@/types';
 import { formatDeadline } from '@/utils/date';
 
@@ -34,9 +34,16 @@ const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
 
 export default function Index({ requests, counts, factories, matchingFreeMachines = [], filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
+    const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<FreeMachineRequest | null>(null);
 
     const form = useForm({
+        request_no: '',
+        factory_id: factories[0]?.id ? String(factories[0].id) : '',
+        party_code: '',
+        contact_person: '',
+        fabrication: '',
+        qty_kg: '1000',
         status: 'new',
         machines_needed: 1,
         spec_label: '',
@@ -48,27 +55,57 @@ export default function Index({ requests, counts, factories, matchingFreeMachine
         router.get(route('admin.free-machine-requests.index'), { ...filters, search, ...overrides }, { preserveState: true, replace: true });
     };
 
+    const openCreate = () => {
+        setEditing(null);
+        form.clearErrors();
+        form.setData({
+            request_no: '',
+            factory_id: filters.factory_id !== 'all' ? filters.factory_id : (factories[0]?.id ? String(factories[0].id) : ''),
+            party_code: '',
+            contact_person: '',
+            fabrication: '',
+            qty_kg: '1000',
+            status: 'new',
+            machines_needed: 2,
+            spec_label: '30" × 24G',
+            start_date: '',
+            message: '',
+        });
+        setShowModal(true);
+    };
+
     const openEdit = (req: FreeMachineRequest) => {
         setEditing(req);
         form.clearErrors();
         form.setData({
+            request_no: req.request_no,
+            factory_id: String(req.factory_id),
+            party_code: req.party_code,
+            contact_person: req.contact_person,
+            fabrication: req.fabrication,
+            qty_kg: String(req.qty_kg),
             status: req.status,
             machines_needed: req.machines_needed,
             spec_label: req.spec_label || '',
             start_date: req.start_date ? req.start_date.slice(0, 10) : '',
             message: req.message || '',
         });
+        setShowModal(true);
     };
 
-    const submitEdit = (e: FormEvent) => {
+    const submitForm = (e: FormEvent) => {
         e.preventDefault();
-        if (!editing) {
-            return;
+        if (editing) {
+            form.put(route('admin.free-machine-requests.update', editing.id), {
+                preserveScroll: true,
+                onSuccess: () => setShowModal(false),
+            });
+        } else {
+            form.post(route('admin.free-machine-requests.store'), {
+                preserveScroll: true,
+                onSuccess: () => setShowModal(false),
+            });
         }
-        form.put(route('admin.free-machine-requests.update', editing.id), {
-            preserveScroll: true,
-            onSuccess: () => setEditing(null),
-        });
     };
 
     const handleDelete = (req: FreeMachineRequest) => {
@@ -97,16 +134,16 @@ export default function Index({ requests, counts, factories, matchingFreeMachine
                     ))}
                 </div>
 
-                {/* Filters */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+                {/* Filters & Add */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
                             applyFilter({ page: 1 });
                         }}
-                        className="flex flex-wrap items-center gap-2"
+                        className="flex flex-wrap items-center gap-2 flex-1"
                     >
-                        <div className="relative flex-1 min-w-[220px]">
+                        <div className="relative flex-1 min-w-[200px]">
                             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                             <input
                                 type="text"
@@ -144,6 +181,14 @@ export default function Index({ requests, counts, factories, matchingFreeMachine
                             Search
                         </button>
                     </form>
+
+                    <button
+                        type="button"
+                        onClick={openCreate}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-blue-600 text-white hover:bg-blue-500 shrink-0"
+                    >
+                        <Plus className="w-3.5 h-3.5" /> New Request
+                    </button>
                 </div>
 
                 {/* Table */}
@@ -152,10 +197,10 @@ export default function Index({ requests, counts, factories, matchingFreeMachine
                         <table className="w-full text-left border-collapse text-xs">
                             <thead>
                                 <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-800/40">
-                                    <th className="py-3 px-4">Request No & Party</th>
+                                    <th className="py-3 px-4">Request No &amp; Party</th>
                                     <th className="py-3 px-4">Target Factory</th>
-                                    <th className="py-3 px-4">Fabrication & Spec</th>
-                                    <th className="py-3 px-4">Volume & Machines</th>
+                                    <th className="py-3 px-4">Fabrication &amp; Spec</th>
+                                    <th className="py-3 px-4">Volume &amp; Machines</th>
                                     <th className="py-3 px-4">Start Date</th>
                                     <th className="py-3 px-4">Status</th>
                                     <th className="py-3 px-4 text-right">Actions</th>
@@ -302,67 +347,122 @@ export default function Index({ requests, counts, factories, matchingFreeMachine
                 </div>
             </div>
 
-            {/* Edit Modal */}
-            {editing && (
-                <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg">
+            {showModal && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl my-8">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
                             <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                                Update Request {editing.request_no}
+                                {editing ? `Update Request ${editing.request_no}` : 'Create Free Machine Request'}
                             </h3>
-                            <button type="button" onClick={() => setEditing(null)}>
+                            <button type="button" onClick={() => setShowModal(false)}>
                                 <X className="w-4 h-4 text-slate-400" />
                             </button>
                         </div>
 
-                        <form onSubmit={submitEdit} className="p-5 space-y-4 text-xs">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block font-semibold mb-1">Status *</label>
-                                    <select
-                                        value={form.data.status}
-                                        onChange={(e) => form.setData('status', e.target.value)}
-                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                    >
-                                        <option value="new">New</option>
-                                        <option value="open">Open</option>
-                                        <option value="conf">Confirmed</option>
-                                        <option value="done">Completed</option>
-                                        <option value="rejected">Rejected</option>
-                                    </select>
-                                    {form.errors.status && <p className="text-rose-500 text-[11px] mt-1">{form.errors.status}</p>}
-                                </div>
-                                <div>
-                                    <label className="block font-semibold mb-1">Machines Needed</label>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        value={form.data.machines_needed}
-                                        onChange={(e) => form.setData('machines_needed', Number(e.target.value))}
-                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block font-semibold mb-1">Spec Label</label>
-                                    <input
-                                        type="text"
-                                        value={form.data.spec_label}
-                                        onChange={(e) => form.setData('spec_label', e.target.value)}
-                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block font-semibold mb-1">Start Date</label>
-                                    <input
-                                        type="date"
-                                        value={form.data.start_date}
-                                        onChange={(e) => form.setData('start_date', e.target.value)}
-                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                    />
-                                </div>
-                            </div>
-
+                        <form onSubmit={submitForm} className="p-5 grid grid-cols-2 gap-3 text-xs">
                             <div>
+                                <label className="block font-semibold mb-1">Target Factory *</label>
+                                <select
+                                    value={form.data.factory_id}
+                                    onChange={(e) => form.setData('factory_id', e.target.value)}
+                                    required
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    {factories.map((f) => (
+                                        <option key={f.id} value={f.id}>
+                                            {f.code} — {f.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Status *</label>
+                                <select
+                                    value={form.data.status}
+                                    onChange={(e) => form.setData('status', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    <option value="new">New</option>
+                                    <option value="open">Open</option>
+                                    <option value="conf">Confirmed</option>
+                                    <option value="done">Completed</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Party / Buyer Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={form.data.party_code}
+                                    onChange={(e) => form.setData('party_code', e.target.value)}
+                                    placeholder="abc"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Contact Person *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={form.data.contact_person}
+                                    onChange={(e) => form.setData('contact_person', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Fabrication *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={form.data.fabrication}
+                                    onChange={(e) => form.setData('fabrication', e.target.value)}
+                                    placeholder="Single Jersey 160 GSM"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Volume (kg) *</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min={0.1}
+                                    required
+                                    value={form.data.qty_kg}
+                                    onChange={(e) => form.setData('qty_kg', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Machines Needed *</label>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    required
+                                    value={form.data.machines_needed}
+                                    onChange={(e) => form.setData('machines_needed', Number(e.target.value))}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Spec Label</label>
+                                <input
+                                    type="text"
+                                    value={form.data.spec_label}
+                                    onChange={(e) => form.setData('spec_label', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block font-semibold mb-1">Start Date</label>
+                                <input
+                                    type="date"
+                                    value={form.data.start_date}
+                                    onChange={(e) => form.setData('start_date', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div className="col-span-2">
                                 <label className="block font-semibold mb-1">Message / Admin Note</label>
                                 <textarea
                                     rows={3}
@@ -371,11 +471,10 @@ export default function Index({ requests, counts, factories, matchingFreeMachine
                                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 />
                             </div>
-
-                            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                            <div className="col-span-2 flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                                 <button
                                     type="button"
-                                    onClick={() => setEditing(null)}
+                                    onClick={() => setShowModal(false)}
                                     className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700"
                                 >
                                     Cancel
@@ -385,7 +484,7 @@ export default function Index({ requests, counts, factories, matchingFreeMachine
                                     disabled={form.processing}
                                     className="px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 disabled:opacity-50"
                                 >
-                                    Save Changes
+                                    {editing ? 'Save Changes' : 'Create Request'}
                                 </button>
                             </div>
                         </form>

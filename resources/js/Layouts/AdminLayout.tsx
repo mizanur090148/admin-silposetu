@@ -23,6 +23,8 @@ import {
     MessageSquareText,
     Receipt,
     ClipboardList,
+    ClipboardCheck,
+    UserCheck,
 } from 'lucide-react';
 import { PageProps } from '@/types';
 
@@ -106,10 +108,23 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
                     icon: ClipboardList,
                 },
                 {
+                    label: 'Floor Production & QC',
+                    href: route('admin.floor-erp.index'),
+                    active: currentUrl.startsWith('/floor-erp'),
+                    icon: ClipboardCheck,
+                    badge: badges?.pendingQc || 0,
+                },
+                {
                     label: 'Billing & Expenses',
                     href: route('admin.bills.index'),
                     active: currentUrl.startsWith('/billing'),
                     icon: Receipt,
+                },
+                {
+                    label: 'Staff & Attendance',
+                    href: route('admin.workforce.index'),
+                    active: currentUrl.startsWith('/workforce'),
+                    icon: UserCheck,
                 },
                 {
                     label: 'Order Threads',

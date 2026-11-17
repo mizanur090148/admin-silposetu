@@ -123,4 +123,38 @@ class FactoriesAndMachinesTest extends TestCase
         $response->assertSessionHasErrors('code');
         $this->assertSame(1, FactoryMachine::where('factory_id', $factory->id)->count());
     }
+
+    public function test_factories_index_filters_by_health_status(): void
+    {
+        $admin = UserFactory::new()->admin()->create();
+        $expiring = Factory::factory()->create([
+            'code' => 'f810',
+            'plan_code' => 'free',
+            'trial_ends_at' => now()->addDays(3),
+            'total_machines' => 2,
+        ]);
+        $expired = Factory::factory()->create([
+            'code' => 'f811',
+            'plan_code' => 'free',
+            'trial_ends_at' => now()->subDays(2),
+            'total_machines' => 2,
+        ]);
+        $overQuota = Factory::factory()->create([
+            'code' => 'f812',
+            'plan_code' => 's',
+            'trial_ends_at' => null,
+            'total_machines' => 15,
+        ]);
+
+        $this->withoutVite()->actingAs($admin);
+
+        $this->get(route('admin.factories.index', ['health' => 'expiring']))
+            ->assertInertia(fn ($page) => $page->has('factories.data', 1)->where('factories.data.0.id', $expiring->id));
+
+        $this->get(route('admin.factories.index', ['health' => 'expired']))
+            ->assertInertia(fn ($page) => $page->has('factories.data', 1)->where('factories.data.0.id', $expired->id));
+
+        $this->get(route('admin.factories.index', ['health' => 'over_quota']))
+            ->assertInertia(fn ($page) => $page->has('factories.data', 1)->where('factories.data.0.id', $overQuota->id));
+    }
 }

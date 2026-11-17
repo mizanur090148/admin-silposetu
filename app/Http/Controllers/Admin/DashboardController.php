@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
 use App\Models\Bill;
 use App\Models\DeliveryChallan;
+use App\Models\Employee;
+use App\Models\FabricRoll;
 use App\Models\Factory;
+use App\Models\FactoryAttendance;
 use App\Models\FactoryExpense;
 use App\Models\FactoryMachine;
 use App\Models\FreeMachineRequest;
@@ -17,6 +20,7 @@ use App\Models\Partner;
 use App\Models\Production;
 use App\Models\QcInspection;
 use App\Models\Quotation;
+use App\Models\StoreItem;
 use App\Models\SubcontractOrder;
 use App\Models\SubcontractPost;
 use App\Models\Supplier;
@@ -127,9 +131,13 @@ class DashboardController extends Controller
             'active_orders' => SubcontractOrder::whereIn('status', ['run', 'running'])->count(),
             'total_orders' => SubcontractOrder::count(),
             'total_knitted_kg' => (float) Production::sum('qty_kg'),
+            'total_rolls' => FabricRoll::count(),
             'total_qc_inspections' => QcInspection::count(),
             'pending_qc_signs' => $pendingQcSigns,
             'total_challans' => DeliveryChallan::count(),
+            'total_employees' => Employee::count(),
+            'present_attendances' => FactoryAttendance::whereIn('status', ['present', 'overtime'])->count(),
+            'low_stock_items' => StoreItem::whereColumn('stock_qty', '<=', 'min_qty')->count(),
             'unread_threads' => MessageThread::where('unread_count', '>', 0)->count(),
             'total_billed_tk' => round($billedTk, 2),
             'total_collected_tk' => round($collectedTk, 2),

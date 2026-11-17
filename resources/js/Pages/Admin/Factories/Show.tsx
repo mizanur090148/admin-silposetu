@@ -52,6 +52,7 @@ interface Props {
         total_orders: number;
         parties_count: number;
         employees_count: number;
+        attendances_count: number;
         qc_count: number;
         challans_count: number;
         billed_tk: number;
@@ -68,7 +69,8 @@ interface Props {
 }
 
 export default function Show({ factory, erpOverview }: Props) {
-    const [showAddMachine, setShowAddMachine] = useState(false);
+    const [showMachineModal, setShowMachineModal] = useState(false);
+    const [editingMachine, setEditingMachine] = useState<FactoryMachine | null>(null);
 
     const machineForm = useForm({
         factory_id: String(factory.id),
@@ -88,12 +90,66 @@ export default function Show({ factory, erpOverview }: Props) {
         note: '',
     });
 
-    const handleAddMachine = (e: FormEvent) => {
+    const openAddMachine = () => {
+        setEditingMachine(null);
+        machineForm.setData({
+            factory_id: String(factory.id),
+            code: '',
+            knit_type: 'c',
+            dia: '30',
+            gauge: '24',
+            spec_label: '',
+            brand: 'Pailung',
+            status: 'idle',
+            current_order_no: '',
+            broadcast_free: false,
+            free_from: '',
+            daily_capacity_kg: '190',
+            rate_label: '৳১৩–১৫ / kg',
+            supported_fabrics: 'Single Jersey, 1×1 Rib',
+            note: '',
+        });
+        setShowMachineModal(true);
+    };
+
+    const openEditMachine = (m: FactoryMachine) => {
+        setEditingMachine(m);
+        machineForm.setData({
+            factory_id: String(m.factory_id),
+            code: m.code,
+            knit_type: m.knit_type,
+            dia: m.dia ? String(m.dia) : '',
+            gauge: String(m.gauge),
+            spec_label: m.spec_label || '',
+            brand: m.brand || '',
+            status: m.status,
+            current_order_no: m.current_order_no || '',
+            broadcast_free: Boolean(m.broadcast_free),
+            free_from: m.free_from ? String(m.free_from).slice(0, 10) : '',
+            daily_capacity_kg: String(m.daily_capacity_kg),
+            rate_label: m.rate_label || '',
+            supported_fabrics: (m.supported_fabrics_json || []).join(', '),
+            note: m.note || '',
+        });
+        setShowMachineModal(true);
+    };
+
+    const handleSubmitMachine = (e: FormEvent) => {
         e.preventDefault();
+        if (editingMachine) {
+            machineForm.put(route('admin.factory-machines.update', editingMachine.id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setShowMachineModal(false);
+                    setEditingMachine(null);
+                },
+            });
+            return;
+        }
         machineForm.post(route('admin.factory-machines.store'), {
             preserveScroll: true,
             onSuccess: () => {
-                setShowAddMachine(false);
+                setShowMachineModal(false);
                 machineForm.reset('code', 'spec_label', 'current_order_no', 'note');
             },
         });
@@ -203,35 +259,84 @@ export default function Show({ factory, erpOverview }: Props) {
                         </div>
                     </div>
 
-                    {/* ERP Overview Strip */}
-                    <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30">
-                            <Cpu className="w-4 h-4 text-blue-600" />
-                            <div>
-                                <p className="text-slate-500">Machines Tracked</p>
-                                <p className="font-bold">{machines.length} / {factory.total_machines}</p>
+                    {/* ERP Overview Strip + Drill-Down Shortcuts */}
+                    <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 space-y-3 text-xs">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-blue-50/60 dark:bg-blue-950/30">
+                                <Cpu className="w-4 h-4 text-blue-600" />
+                                <div>
+                                    <p className="text-slate-500">Machines Tracked</p>
+                                    <p className="font-bold">
+                                        {machines.length} / {factory.total_machines}
+                                        {erpOverview.health.over_quota && (
+                                            <span className="ml-1.5 px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 text-[10px]">Over Quota</span>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                            <Link
+                                href={route('admin.orders.index', { factory_id: factory.id })}
+                                className="flex items-center gap-2.5 p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30 hover:ring-1 ring-indigo-400"
+                            >
+                                <ClipboardList className="w-4 h-4 text-indigo-600" />
+                                <div>
+                                    <p className="text-slate-500">Subcontract Orders</p>
+                                    <p className="font-bold">{erpOverview.active_orders} running / {erpOverview.total_orders} total</p>
+                                </div>
+                            </Link>
+                            <Link
+                                href={route('admin.workforce.index', { factory_id: factory.id })}
+                                className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30 hover:ring-1 ring-emerald-400"
+                            >
+                                <Users className="w-4 h-4 text-emerald-600" />
+                                <div>
+                                    <p className="text-slate-500">Workforce &amp; Parties</p>
+                                    <p className="font-bold">
+                                        {erpOverview.employees_count} staff · {erpOverview.attendances_count} att · {erpOverview.parties_count} parties
+                                    </p>
+                                </div>
+                            </Link>
+                            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/30">
+                                <Users className="w-4 h-4 text-amber-600" />
+                                <div>
+                                    <p className="text-slate-500">Portal Users &amp; Vendors</p>
+                                    <p className="font-bold">
+                                        {factory.users?.length ?? 0} users · {factory.vendors?.length ?? 0} vendors
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/30">
-                            <ClipboardList className="w-4 h-4 text-indigo-600" />
-                            <div>
-                                <p className="text-slate-500">Subcontract Orders</p>
-                                <p className="font-bold">{erpOverview.active_orders} running / {erpOverview.total_orders} total</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/30">
-                            <Users className="w-4 h-4 text-emerald-600" />
-                            <div>
-                                <p className="text-slate-500">Employees / Parties</p>
-                                <p className="font-bold">{erpOverview.employees_count} staff · {erpOverview.parties_count} parties</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-950/30">
-                            <Users className="w-4 h-4 text-amber-600" />
-                            <div>
-                                <p className="text-slate-500">Portal Users</p>
-                                <p className="font-bold">{factory.users?.length ?? 0} linked accounts</p>
-                            </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Link
+                                href={route('admin.orders.index', { factory_id: factory.id })}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+                            >
+                                View Orders &rarr;
+                            </Link>
+                            <Link
+                                href={route('admin.floor-erp.index', { factory_id: factory.id })}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+                            >
+                                Floor ERP ({erpOverview.qc_count} QC · {erpOverview.challans_count} Challans) &rarr;
+                            </Link>
+                            <Link
+                                href={route('admin.bills.index', { factory_code: factory.code })}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+                            >
+                                Billing &amp; Expenses &rarr;
+                            </Link>
+                            <Link
+                                href={route('admin.workforce.index', { factory_id: factory.id })}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+                            >
+                                Staff &amp; Attendance &rarr;
+                            </Link>
+                            <Link
+                                href={route('admin.threads.index', { factory_code: factory.code })}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold"
+                            >
+                                Order Threads &rarr;
+                            </Link>
                         </div>
                     </div>
                 </div>
@@ -245,7 +350,7 @@ export default function Show({ factory, erpOverview }: Props) {
                         </div>
                         <button
                             type="button"
-                            onClick={() => setShowAddMachine(true)}
+                            onClick={openAddMachine}
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500"
                         >
                             <Plus className="w-3.5 h-3.5" /> Add Machine
@@ -310,17 +415,28 @@ export default function Show({ factory, erpOverview }: Props) {
                                                     </button>
                                                 </td>
                                                 <td className="py-3 px-4 text-right">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            if (confirm(`Delete machine ${m.code}?`)) {
-                                                                router.delete(route('admin.factory-machines.destroy', m.id), { preserveScroll: true });
-                                                            }
-                                                        }}
-                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
+                                                    <div className="inline-flex items-center gap-1">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openEditMachine(m)}
+                                                            title="Edit Machine"
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600"
+                                                        >
+                                                            <Pencil className="w-3.5 h-3.5" />
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                if (confirm(`Delete machine ${m.code}?`)) {
+                                                                    router.delete(route('admin.factory-machines.destroy', m.id), { preserveScroll: true });
+                                                                }
+                                                            }}
+                                                            title="Delete Machine"
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -403,10 +519,13 @@ export default function Show({ factory, erpOverview }: Props) {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
                         <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm font-semibold">
-                            <span>Bills & Expenses</span>
-                            <span className="text-xs font-normal text-slate-500">
-                                Challans: {erpOverview.challans_count} · Exp: ৳{Math.round(erpOverview.expenses_tk).toLocaleString()}
-                            </span>
+                            <span>Bills ({erpOverview.challans_count} Challans)</span>
+                            <Link
+                                href={route('admin.bills.index', { factory_code: factory.code })}
+                                className="text-xs font-semibold text-blue-600 hover:underline"
+                            >
+                                Open Billing Hub &rarr;
+                            </Link>
                         </div>
                         <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                             {erpOverview.recent_bills.length === 0 ? (
@@ -434,29 +553,37 @@ export default function Show({ factory, erpOverview }: Props) {
 
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
                         <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm font-semibold">
-                            <span>Parties ({erpOverview.parties_count}) & Floor Team ({erpOverview.employees_count})</span>
+                            <span>Parties ({erpOverview.parties_count}) &amp; Floor Team ({erpOverview.employees_count})</span>
+                            <Link
+                                href={route('admin.workforce.index', { factory_id: factory.id })}
+                                className="text-xs font-semibold text-blue-600 hover:underline"
+                            >
+                                Manage Workforce &rarr;
+                            </Link>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100 dark:divide-slate-800 text-xs">
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-72 overflow-y-auto">
                                 {erpOverview.parties.length === 0 ? (
                                     <p className="p-4 text-slate-500 text-center">No parties</p>
                                 ) : (
-                                    erpOverview.parties.slice(0, 5).map((p) => (
+                                    erpOverview.parties.map((p) => (
                                         <div key={p.id} className="px-4 py-2.5 flex items-center justify-between">
                                             <div>
                                                 <p className="font-semibold text-slate-900 dark:text-white truncate max-w-[140px]">{p.name}</p>
-                                                <p className="text-[11px] text-slate-500">{p.code} · {p.type}</p>
+                                                <p className="text-[11px] text-slate-500">
+                                                    {p.code} · {p.type} {!p.is_active && '(Inactive)'}
+                                                </p>
                                             </div>
                                             <span className="font-mono text-[11px]">৳{Number(p.default_rate_tk)}</span>
                                         </div>
                                     ))
                                 )}
                             </div>
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-72 overflow-y-auto">
                                 {erpOverview.employees.length === 0 ? (
                                     <p className="p-4 text-slate-500 text-center">No employees</p>
                                 ) : (
-                                    erpOverview.employees.slice(0, 5).map((emp) => (
+                                    erpOverview.employees.map((emp) => (
                                         <div key={emp.id} className="px-4 py-2.5 flex items-center justify-between">
                                             <div>
                                                 <p className="font-semibold text-slate-900 dark:text-white truncate max-w-[130px]">{emp.name}</p>
@@ -472,20 +599,148 @@ export default function Show({ factory, erpOverview }: Props) {
                         </div>
                     </div>
                 </div>
+
+                {/* Recent Expenses, Marketplace Posts, Free Machine Requests & Linked Vendors */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm font-semibold">
+                            <span>Recent Expenses (৳{Math.round(erpOverview.expenses_tk).toLocaleString()})</span>
+                            <Link
+                                href={route('admin.bills.index', { tab: 'expenses', factory_code: factory.code })}
+                                className="text-xs font-semibold text-blue-600 hover:underline"
+                            >
+                                All &rarr;
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                            {erpOverview.recent_expenses.length === 0 ? (
+                                <p className="p-5 text-slate-500 text-center">No expenses logged yet.</p>
+                            ) : (
+                                erpOverview.recent_expenses.map((exp) => (
+                                    <div key={exp.id} className="px-5 py-3 flex items-center justify-between">
+                                        <div>
+                                            <p className="font-semibold text-slate-900 dark:text-white">{exp.title}</p>
+                                            <p className="text-[11px] text-slate-500">
+                                                {exp.category} · {exp.payment_method} · {exp.expense_date}
+                                            </p>
+                                        </div>
+                                        <span className="font-semibold text-rose-600">৳{Number(exp.amount_tk).toLocaleString()}</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm font-semibold">
+                            <span>Subcontract Posts ({factory.subcontract_posts?.length ?? 0})</span>
+                            <Link href={route('admin.posts.index')} className="text-xs font-semibold text-blue-600 hover:underline">
+                                Marketplace &rarr;
+                            </Link>
+                        </div>
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                            {(factory.subcontract_posts || []).length === 0 ? (
+                                <p className="p-5 text-slate-500 text-center">No subcontract posts.</p>
+                            ) : (
+                                factory.subcontract_posts?.map((post) => (
+                                    <Link
+                                        key={post.id}
+                                        href={route('admin.posts.show', post.id)}
+                                        className="px-5 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                    >
+                                        <div className="min-w-0 pr-2">
+                                            <p className="font-semibold text-slate-900 dark:text-white truncate">{post.title}</p>
+                                            <p className="text-[11px] text-slate-500 truncate">
+                                                {post.fabric_type} · {Number(post.quantity_kg).toLocaleString()} kg · {post.quotations_count ?? 0} quotes
+                                            </p>
+                                        </div>
+                                        <span className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold uppercase shrink-0">
+                                            {post.status}
+                                        </span>
+                                    </Link>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+                        <div className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-sm font-semibold">
+                            <span>
+                                Free MC Requests ({factory.free_machine_requests?.length ?? 0}) &amp; Vendors ({factory.vendors?.length ?? 0})
+                            </span>
+                        </div>
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+                            {(factory.free_machine_requests || []).map((req) => (
+                                <Link
+                                    key={`req-${req.id}`}
+                                    href={route('admin.free-machine-requests.index')}
+                                    className="px-5 py-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                >
+                                    <div className="min-w-0 pr-2">
+                                        <p className="font-semibold text-slate-900 dark:text-white truncate">
+                                            {req.request_no} · {req.fabrication}
+                                        </p>
+                                        <p className="text-[11px] text-slate-500">
+                                            {req.contact_person} · {req.machines_needed} MCs ({Number(req.qty_kg)} kg)
+                                        </p>
+                                    </div>
+                                    <span className="px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-[10px] font-semibold shrink-0">
+                                        {req.status}
+                                    </span>
+                                </Link>
+                            ))}
+                            {(factory.vendors || []).map((ven) => (
+                                <Link
+                                    key={`ven-${ven.id}`}
+                                    href={route('admin.vendors.index')}
+                                    className="px-5 py-2.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                                >
+                                    <div className="min-w-0 pr-2">
+                                        <p className="font-semibold text-slate-900 dark:text-white truncate">
+                                            Vendor: {ven.name} ({ven.code})
+                                        </p>
+                                        <p className="text-[11px] text-slate-500">
+                                            {ven.type} {ven.phone ? `· ${ven.phone}` : ''}
+                                        </p>
+                                    </div>
+                                    <span
+                                        className={`px-2 py-0.5 rounded text-[10px] font-semibold shrink-0 ${
+                                            ven.is_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                                        }`}
+                                    >
+                                        {ven.is_verified ? 'Verified' : 'Pending'}
+                                    </span>
+                                </Link>
+                            ))}
+                            {(factory.free_machine_requests || []).length === 0 && (factory.vendors || []).length === 0 && (
+                                <p className="p-5 text-slate-500 text-center">No free machine requests or linked vendors.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            {/* Add Machine Modal */}
-            {showAddMachine && (
+            {/* Add / Edit Machine Modal */}
+            {showMachineModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4">
                     <div className="w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
                         <div className="flex items-center justify-between">
-                            <h3 className="text-base font-bold">Add Machine to {factory.name}</h3>
-                            <button onClick={() => setShowAddMachine(false)} className="text-slate-400 hover:text-slate-700">
+                            <h3 className="text-base font-bold">
+                                {editingMachine ? `Edit Machine ${editingMachine.code}` : `Add Machine to ${factory.name}`}
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowMachineModal(false);
+                                    setEditingMachine(null);
+                                }}
+                                className="text-slate-400 hover:text-slate-700"
+                            >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleAddMachine} className="grid grid-cols-2 gap-3 text-xs">
+                        <form onSubmit={handleSubmitMachine} className="grid grid-cols-2 gap-3 text-xs">
                             <div>
                                 <label className="block font-semibold mb-1">Machine Code *</label>
                                 <input
@@ -567,12 +822,40 @@ export default function Show({ factory, erpOverview }: Props) {
                                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 />
                             </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Current Order No</label>
+                                <input
+                                    type="text"
+                                    value={machineForm.data.current_order_no}
+                                    onChange={(e) => machineForm.setData('current_order_no', e.target.value)}
+                                    placeholder="SC-2026-001"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Free From Date</label>
+                                <input
+                                    type="date"
+                                    value={machineForm.data.free_from}
+                                    onChange={(e) => machineForm.setData('free_from', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
                             <div className="col-span-2">
                                 <label className="block font-semibold mb-1">Supported Fabrics (comma separated)</label>
                                 <input
                                     type="text"
                                     value={machineForm.data.supported_fabrics}
                                     onChange={(e) => machineForm.setData('supported_fabrics', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block font-semibold mb-1">Note</label>
+                                <input
+                                    type="text"
+                                    value={machineForm.data.note}
+                                    onChange={(e) => machineForm.setData('note', e.target.value)}
                                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 />
                             </div>
@@ -586,7 +869,14 @@ export default function Show({ factory, erpOverview }: Props) {
                                 <label htmlFor="modal_broadcast" className="font-semibold">Broadcast as Free Machine</label>
                             </div>
                             <div className="col-span-2 flex justify-end gap-2 pt-2">
-                                <button type="button" onClick={() => setShowAddMachine(false)} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowMachineModal(false);
+                                        setEditingMachine(null);
+                                    }}
+                                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700"
+                                >
                                     Cancel
                                 </button>
                                 <button
@@ -594,7 +884,7 @@ export default function Show({ factory, erpOverview }: Props) {
                                     disabled={machineForm.processing}
                                     className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 disabled:opacity-50"
                                 >
-                                    Save Machine
+                                    {editingMachine ? 'Update Machine' : 'Save Machine'}
                                 </button>
                             </div>
                         </form>

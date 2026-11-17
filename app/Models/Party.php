@@ -21,8 +21,15 @@ class Party extends Model
         'code',
         'name',
         'type',
+        'address',
+        'contact_person',
         'phone',
+        'email',
+        'bin_tin',
         'default_rate_tk',
+        'payment_terms',
+        'opening_balance',
+        'added_date',
         'is_active',
     ];
 

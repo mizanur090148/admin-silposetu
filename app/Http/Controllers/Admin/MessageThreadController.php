@@ -5,8 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Factory;
 use App\Models\MessageThread;
+use App\Models\SubcontractOrder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -66,6 +68,7 @@ class MessageThreadController extends Controller
                 'total_unread_messages' => (int) MessageThread::sum('unread_count'),
             ],
             'factories' => Factory::orderBy('name')->get(['id', 'code', 'name']),
+            'orders' => SubcontractOrder::orderByDesc('id')->get(['id', 'order_no', 'factory_id', 'party_code', 'buyer']),
             'filters' => [
                 'search' => $search,
                 'factory_code' => $factoryCode,
@@ -73,6 +76,48 @@ class MessageThreadController extends Controller
                 'per_page' => $perPage,
             ],
         ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'thread_code' => ['nullable', 'string', 'max:40', Rule::unique('message_threads', 'thread_code')],
+            'factory_code' => ['required', 'string', 'max:20'],
+            'party_code' => ['required', 'string', 'max:40'],
+            'order_no' => ['nullable', 'string', 'max:100'],
+            'title' => ['required', 'string', 'max:255'],
+            'message' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $code = trim((string) ($validated['thread_code'] ?? ''));
+        if ($code === '') {
+            $seq = MessageThread::count() + 101;
+            while (MessageThread::where('thread_code', 'TH-'.$seq)->exists()) {
+                $seq++;
+            }
+            $code = 'TH-'.$seq;
+        }
+
+        $thread = MessageThread::create([
+            'thread_code' => $code,
+            'factory_code' => trim($validated['factory_code']),
+            'party_code' => trim($validated['party_code']),
+            'order_no' => ! empty($validated['order_no']) ? trim($validated['order_no']) : null,
+            'title' => trim($validated['title']),
+            'unread_count' => 0,
+            'messages_json' => [
+                [
+                    's' => 'sys',
+                    'who' => 'sys',
+                    'n' => $request->user()?->name ?: 'ShilpoSetu Admin',
+                    't' => now()->format('d M, h:i A'),
+                    'txt' => trim($validated['message']),
+                ],
+            ],
+        ]);
+
+        return redirect()->route('admin.threads.show', $thread->id)
+            ->with('success', "Thread {$thread->thread_code} created.");
     }
 
     public function show(int $id): Response
@@ -117,5 +162,14 @@ class MessageThreadController extends Controller
         $thread->update(['unread_count' => 0]);
 
         return back()->with('success', "Marked thread {$thread->thread_code} as read.");
+    }
+
+    public function destroy(int $id): RedirectResponse
+    {
+        $thread = MessageThread::findOrFail($id);
+        $code = $thread->thread_code;
+        $thread->delete();
+
+        return redirect()->route('admin.threads.index')->with('success', "Thread {$code} deleted.");
     }
 }

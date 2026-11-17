@@ -160,7 +160,63 @@ class PostController extends Controller
         return Inertia::render('Admin/Posts/Show', [
             'post' => $post,
             'matches' => $matches,
+            'factories' => Factory::orderBy('name')->get(['id', 'code', 'name', 'area']),
         ]);
+    }
+
+    public function edit(int $id): Response
+    {
+        $post = SubcontractPost::findOrFail($id);
+
+        return Inertia::render('Admin/Posts/Edit', [
+            'post' => $post,
+            'factories' => Factory::orderBy('name')->get(['id', 'code', 'name', 'area']),
+            'users' => User::orderBy('name')->get(['id', 'name', 'phone', 'role', 'factory_id']),
+        ]);
+    }
+
+    public function update(Request $request, int $id): RedirectResponse
+    {
+        $post = SubcontractPost::findOrFail($id);
+
+        $validated = $request->validate([
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'factory_id' => ['nullable', 'integer', 'exists:factories,id'],
+            'post_type' => ['required', Rule::in(['work_offer', 'machine_available'])],
+            'title' => ['required', 'string', 'max:255'],
+            'fabric_type' => ['required', 'string', 'max:255'],
+            'gsm' => ['nullable', 'string', 'max:30'],
+            'dia' => ['nullable', 'integer', 'min:1', 'max:120'],
+            'gauge' => ['nullable', 'integer', 'min:1', 'max:60'],
+            'quantity_kg' => ['required', 'numeric', 'min:0'],
+            'target_rate_tk' => ['nullable', 'numeric', 'min:0'],
+            'yarn_count' => ['nullable', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'delivery_deadline' => ['nullable', 'date'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'status' => ['required', 'string', Rule::in(['open', 'closed', 'awarded', 'cancelled'])],
+        ]);
+
+        $post->update([
+            'user_id' => $validated['user_id'] ?? $post->user_id,
+            'factory_id' => $validated['factory_id'] ?? null,
+            'post_type' => $validated['post_type'],
+            'title' => $validated['title'],
+            'fabric_type' => $validated['fabric_type'],
+            'gsm' => $validated['gsm'] ?? null,
+            'dia' => $validated['dia'] ?? null,
+            'gauge' => $validated['gauge'] ?? null,
+            'quantity_kg' => $validated['quantity_kg'],
+            'target_rate_tk' => $validated['target_rate_tk'] ?? null,
+            'yarn_count' => $validated['yarn_count'] ?? null,
+            'location' => $validated['location'] ?? null,
+            'delivery_deadline' => $validated['delivery_deadline'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'status' => $validated['status'],
+        ]);
+
+        return redirect()->route('admin.posts.show', $post->id)
+            ->with('success', "Post \"{$post->title}\" updated successfully.");
     }
 
     public function updateStatus(Request $request, int $id): RedirectResponse
@@ -193,6 +249,45 @@ class PostController extends Controller
         }
 
         return back()->with('success', "Quotation status set to {$validated['status']}.");
+    }
+
+    public function storeQuotation(Request $request, int $postId): RedirectResponse
+    {
+        $post = SubcontractPost::findOrFail($postId);
+
+        $validated = $request->validate([
+            'factory_id' => ['nullable', 'integer', 'exists:factories,id'],
+            'bidder_name' => ['required', 'string', 'max:255'],
+            'bidder_phone' => ['nullable', 'string', 'max:30'],
+            'offered_rate_tk' => ['required', 'numeric', 'min:0'],
+            'estimated_days' => ['required', 'integer', 'min:1'],
+            'allocated_machines' => ['required', 'integer', 'min:1'],
+            'note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        Quotation::create([
+            'subcontract_post_id' => $post->id,
+            'factory_id' => $validated['factory_id'] ?? null,
+            'bidder_name' => $validated['bidder_name'],
+            'bidder_phone' => $validated['bidder_phone'] ?? null,
+            'offered_rate_tk' => $validated['offered_rate_tk'],
+            'estimated_days' => $validated['estimated_days'],
+            'allocated_machines' => $validated['allocated_machines'],
+            'note' => $validated['note'] ?? null,
+            'status' => 'pending',
+        ]);
+
+        return back()->with('success', 'Quotation added to subcontract post.');
+    }
+
+    public function destroyQuotation(int $postId, int $quotationId): RedirectResponse
+    {
+        $quotation = Quotation::query()
+            ->where('subcontract_post_id', $postId)
+            ->findOrFail($quotationId);
+        $quotation->delete();
+
+        return back()->with('success', 'Quotation deleted.');
     }
 
     public function destroy(int $id): RedirectResponse

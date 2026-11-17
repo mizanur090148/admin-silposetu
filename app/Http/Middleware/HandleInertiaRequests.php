@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Advertisement;
 use App\Models\FreeMachineRequest;
 use App\Models\MessageThread;
+use App\Models\QcInspection;
 use App\Models\SupplierRfq;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -50,11 +51,15 @@ class HandleInertiaRequests extends Middleware
                 'newRfqs' => fn (): int => SupplierRfq::where('status', 'new')->count(),
                 'pendingAds' => fn (): int => Advertisement::where('status', 'pending')->count(),
                 'unreadThreads' => fn (): int => MessageThread::where('unread_count', '>', 0)->count(),
+                'pendingQc' => fn (): int => QcInspection::all(['factory_sign_json', 'vendor_sign_json'])
+                    ->filter(fn (QcInspection $qc): bool => empty(($qc->factory_sign_json ?? [])['v']) || empty(($qc->vendor_sign_json ?? [])['v']))
+                    ->count(),
             ] : [
                 'newMachineRequests' => 0,
                 'newRfqs' => 0,
                 'pendingAds' => 0,
                 'unreadThreads' => 0,
+                'pendingQc' => 0,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

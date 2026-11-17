@@ -1,7 +1,7 @@
 import React, { FormEvent } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { ArrowLeft, CheckCheck, Send, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, CheckCheck, Send, ShieldCheck, Trash2 } from 'lucide-react';
 import { MessageThreadRow } from '@/types';
 
 interface Props {
@@ -39,15 +39,28 @@ export default function Show({ thread }: Props) {
                         <ArrowLeft className="w-4 h-4" /> Back to Threads
                     </Link>
 
-                    {thread.unread_count > 0 && (
+                    <div className="flex items-center gap-2">
+                        {thread.unread_count > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => router.post(route('admin.threads.read', thread.id), {}, { preserveScroll: true })}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-500"
+                            >
+                                <CheckCheck className="w-3.5 h-3.5" /> Mark Read ({thread.unread_count})
+                            </button>
+                        )}
                         <button
                             type="button"
-                            onClick={() => router.post(route('admin.threads.read', thread.id), {}, { preserveScroll: true })}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-500"
+                            onClick={() => {
+                                if (confirm(`Delete thread ${thread.thread_code}?`)) {
+                                    router.delete(route('admin.threads.destroy', thread.id));
+                                }
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-semibold hover:bg-rose-500"
                         >
-                            <CheckCheck className="w-3.5 h-3.5" /> Mark Read ({thread.unread_count})
+                            <Trash2 className="w-3.5 h-3.5" /> Delete
                         </button>
-                    )}
+                    </div>
                 </div>
 
                 {/* Thread Header */}

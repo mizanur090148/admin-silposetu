@@ -2,7 +2,7 @@ import React, { FormEvent, useState } from 'react';
 import { Head, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
-import { Handshake, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react';
+import { CheckCircle2, Handshake, Pencil, Plus, Search, Trash2, Users, Wallet, X } from 'lucide-react';
 import { PaginatedData, Partner, UserRef } from '@/types';
 
 interface PartnerUserRow {
@@ -17,6 +17,8 @@ interface PartnerUserRow {
 interface Props {
     partners: PaginatedData<Partner>;
     partnerUsers?: PartnerUserRow[];
+    existingPartnerUserIds?: number[];
+    existingPartnerCodes?: string[];
     summary: {
         total_partners: number;
         total_referrals: number;
@@ -31,10 +33,23 @@ interface Props {
     };
 }
 
-export default function Index({ partners, partnerUsers = [], summary, users, filters }: Props) {
+export default function Index({
+    partners,
+    partnerUsers = [],
+    existingPartnerUserIds = [],
+    existingPartnerCodes = [],
+    summary,
+    users,
+    filters,
+}: Props) {
     const [search, setSearch] = useState(filters.search || '');
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<Partner | null>(null);
+    const [payoutPartner, setPayoutPartner] = useState<Partner | null>(null);
+
+    const payoutForm = useForm({
+        amount_tk: '',
+    });
 
     const form = useForm({
         user_id: '',
@@ -250,6 +265,19 @@ export default function Index({ partners, partnerUsers = [], summary, users, fil
                                         </td>
                                         <td className="py-3 px-4">
                                             <div className="flex items-center justify-end gap-1.5">
+                                                {Number(p.balance_commission_tk) > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setPayoutPartner(p);
+                                                            payoutForm.setData('amount_tk', String(p.balance_commission_tk));
+                                                        }}
+                                                        title="Record Commission Payout"
+                                                        className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg bg-emerald-600 text-white text-[11px] font-semibold hover:bg-emerald-500"
+                                                    >
+                                                        <Wallet className="w-3 h-3" /> Payout
+                                                    </button>
+                                                )}
                                                 <button
                                                     type="button"
                                                     onClick={() => openEdit(p)}
@@ -322,13 +350,19 @@ export default function Index({ partners, partnerUsers = [], summary, users, fil
                                             <span className="font-mono">{u.partner_code || 'No code yet'}</span>
                                         </td>
                                         <td className="py-3 px-4 text-right">
-                                            <button
-                                                type="button"
-                                                onClick={() => openCreateFromUser(u)}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-600 text-white text-[11px] font-semibold hover:bg-purple-500"
-                                            >
-                                                <Plus className="w-3 h-3" /> Setup Partner Ledger
-                                            </button>
+                                            {existingPartnerUserIds.includes(u.id) || (u.partner_code && existingPartnerCodes.includes(u.partner_code)) ? (
+                                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 text-[11px] font-bold">
+                                                    <CheckCircle2 className="w-3 h-3" /> Ledger Active
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => openCreateFromUser(u)}
+                                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-600 text-white text-[11px] font-semibold hover:bg-purple-500"
+                                                >
+                                                    <Plus className="w-3 h-3" /> Setup Partner Ledger
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -480,6 +514,55 @@ export default function Index({ partners, partnerUsers = [], summary, users, fil
                                     className="px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 disabled:opacity-50"
                                 >
                                     {editing ? 'Update Partner' : 'Create Partner'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {payoutPartner && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+                            <h3 className="font-bold text-sm">Record Commission Payout: {payoutPartner.partner_code}</h3>
+                            <button type="button" onClick={() => setPayoutPartner(null)}>
+                                <X className="w-4 h-4 text-slate-400" />
+                            </button>
+                        </div>
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                payoutForm.post(route('admin.partners.payout', payoutPartner.id), {
+                                    preserveScroll: true,
+                                    onSuccess: () => setPayoutPartner(null),
+                                });
+                            }}
+                            className="p-5 space-y-4 text-xs"
+                        >
+                            <p className="text-slate-500">
+                                Available balance: <span className="font-bold text-emerald-600">৳{Number(payoutPartner.balance_commission_tk).toLocaleString()}</span> · Method:{' '}
+                                <span className="uppercase font-semibold">{payoutPartner.payout_method}</span> ({payoutPartner.payout_number || 'N/A'})
+                            </p>
+                            <div>
+                                <label className="block font-semibold mb-1">Payout Amount (৳) *</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min={1}
+                                    required
+                                    value={payoutForm.data.amount_tk}
+                                    onChange={(e) => payoutForm.setData('amount_tk', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                                {payoutForm.errors.amount_tk && <p className="text-rose-500 mt-1">{payoutForm.errors.amount_tk}</p>}
+                            </div>
+                            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                                <button type="button" onClick={() => setPayoutPartner(null)} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={payoutForm.processing} className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-semibold">
+                                    Confirm Payout
                                 </button>
                             </div>
                         </form>

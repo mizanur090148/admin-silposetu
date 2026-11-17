@@ -1,8 +1,8 @@
-import React from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import React, { FormEvent, useState } from 'react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { ArrowLeft, CheckCircle2, Factory, MapPin, Sparkles, Trash2, XCircle } from 'lucide-react';
-import { SubcontractPost } from '@/types';
+import { ArrowLeft, CheckCircle2, Factory, MapPin, Pencil, Plus, Sparkles, Trash2, X, XCircle } from 'lucide-react';
+import { FactoryRef, SubcontractPost } from '@/types';
 import { formatDeadline } from '@/utils/date';
 
 interface MatchItem {
@@ -17,6 +17,7 @@ interface MatchItem {
 interface Props {
     post: SubcontractPost;
     matches: MatchItem[];
+    factories?: FactoryRef[];
 }
 
 const QUOTE_BADGE: Record<string, string> = {
@@ -25,7 +26,29 @@ const QUOTE_BADGE: Record<string, string> = {
     rejected: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
 };
 
-export default function Show({ post, matches }: Props) {
+export default function Show({ post, matches, factories = [] }: Props) {
+    const [showQuoteModal, setShowQuoteModal] = useState(false);
+
+    const quoteForm = useForm({
+        factory_id: '',
+        bidder_name: '',
+        bidder_phone: '',
+        offered_rate_tk: '',
+        estimated_days: 7,
+        allocated_machines: 2,
+        note: '',
+    });
+
+    const submitQuotation = (e: FormEvent) => {
+        e.preventDefault();
+        quoteForm.post(route('admin.posts.quotations.store', post.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowQuoteModal(false);
+                quoteForm.reset('bidder_name', 'bidder_phone', 'offered_rate_tk', 'note');
+            },
+        });
+    };
     const updatePostStatus = (status: string) => {
         router.post(route('admin.posts.status', post.id), { status }, { preserveScroll: true });
     };
@@ -65,6 +88,12 @@ export default function Show({ post, matches }: Props) {
                             <option value="closed">Status: Closed</option>
                             <option value="cancelled">Status: Cancelled</option>
                         </select>
+                        <Link
+                            href={route('admin.posts.edit', post.id)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500"
+                        >
+                            <Pencil className="w-3.5 h-3.5" /> Edit Post
+                        </Link>
                         <button
                             type="button"
                             onClick={handleDeletePost}
@@ -168,9 +197,18 @@ export default function Show({ post, matches }: Props) {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Quotations */}
                     <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                            Quotations ({post.quotations?.length ?? 0})
-                        </h3>
+                        <div className="flex items-center justify-between">
+                            <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                                Quotations ({post.quotations?.length ?? 0})
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowQuoteModal(true)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500"
+                            >
+                                <Plus className="w-3.5 h-3.5" /> Add Quotation
+                            </button>
+                        </div>
 
                         <div className="space-y-3">
                             {(post.quotations || []).map((q) => (
@@ -223,6 +261,18 @@ export default function Show({ post, matches }: Props) {
                                                 Pending
                                             </button>
                                         )}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                if (confirm(`Delete quotation from ${q.bidder_name}?`)) {
+                                                    router.delete(route('admin.posts.quotations.destroy', [post.id, q.id]), { preserveScroll: true });
+                                                }
+                                            }}
+                                            title="Remove Quotation"
+                                            className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-rose-600 hover:bg-rose-50"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -271,6 +321,105 @@ export default function Show({ post, matches }: Props) {
                     </div>
                 </div>
             </div>
+
+            {showQuoteModal && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg">
+                        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
+                            <h3 className="font-bold text-sm">Add Bid / Quotation</h3>
+                            <button type="button" onClick={() => setShowQuoteModal(false)}>
+                                <X className="w-4 h-4 text-slate-400" />
+                            </button>
+                        </div>
+                        <form onSubmit={submitQuotation} className="p-5 grid grid-cols-2 gap-3 text-xs">
+                            <div className="col-span-2">
+                                <label className="block font-semibold mb-1">Bidder Factory (Optional)</label>
+                                <select
+                                    value={quoteForm.data.factory_id}
+                                    onChange={(e) => quoteForm.setData('factory_id', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    <option value="">External Bidder</option>
+                                    {factories.map((f) => (
+                                        <option key={f.id} value={f.id}>
+                                            {f.code} — {f.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Bidder Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={quoteForm.data.bidder_name}
+                                    onChange={(e) => quoteForm.setData('bidder_name', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Bidder Phone</label>
+                                <input
+                                    type="text"
+                                    value={quoteForm.data.bidder_phone}
+                                    onChange={(e) => quoteForm.setData('bidder_phone', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Offered Rate (৳/kg) *</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min={0}
+                                    required
+                                    value={quoteForm.data.offered_rate_tk}
+                                    onChange={(e) => quoteForm.setData('offered_rate_tk', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Est. Days / Machines</label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        required
+                                        value={quoteForm.data.estimated_days}
+                                        onChange={(e) => quoteForm.setData('estimated_days', Number(e.target.value))}
+                                        className="w-1/2 px-2.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                    />
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        required
+                                        value={quoteForm.data.allocated_machines}
+                                        onChange={(e) => quoteForm.setData('allocated_machines', Number(e.target.value))}
+                                        className="w-1/2 px-2.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                    />
+                                </div>
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block font-semibold mb-1">Note</label>
+                                <input
+                                    type="text"
+                                    value={quoteForm.data.note}
+                                    onChange={(e) => quoteForm.setData('note', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div className="col-span-2 flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                                <button type="button" onClick={() => setShowQuoteModal(false)} className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={quoteForm.processing} className="px-4 py-2 rounded-xl bg-blue-600 text-white font-semibold">
+                                    Save Quotation
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 }

@@ -4,6 +4,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\Advertisement;
 use App\Models\Factory;
+use App\Models\FreeMachineRequest;
 use App\Models\JobApplication;
 use App\Models\JobListing;
 use App\Models\Partner;
@@ -250,5 +251,99 @@ class MarketplaceAndDirectoryTest extends TestCase
         $this->actingAs($admin)->delete(route('admin.jobs.destroy', $job->id))
             ->assertRedirect(route('admin.jobs.index'));
         $this->assertModelMissing($job);
+    }
+
+    public function test_admin_can_edit_subcontract_posts_manage_quotations_record_partner_payouts_and_create_requests_rfqs(): void
+    {
+        $admin = UserFactory::new()->admin()->create();
+        $factory = Factory::factory()->create(['code' => 'f95', 'area' => 'Narayanganj']);
+        $user = UserFactory::new()->create(['role' => 'fac', 'factory_id' => $factory->id]);
+
+        $this->withoutVite()->actingAs($admin);
+
+        $postResponse = $this->post(route('admin.posts.store'), [
+            'user_id' => $user->id,
+            'factory_id' => $factory->id,
+            'post_type' => 'work_offer',
+            'title' => 'Need 5000kg Rib Capacity',
+            'fabric_type' => '1x1 Rib',
+            'quantity_kg' => 5000,
+            'status' => 'open',
+            'notify_matches' => false,
+        ]);
+        $post = SubcontractPost::where('title', 'Need 5000kg Rib Capacity')->firstOrFail();
+        $postResponse->assertRedirect(route('admin.posts.show', $post->id));
+
+        $this->get(route('admin.posts.edit', $post->id))
+            ->assertInertia(fn (Assert $page) => $page->component('Admin/Posts/Edit')->where('post.id', $post->id));
+
+        $this->put(route('admin.posts.update', $post->id), [
+            'user_id' => $user->id,
+            'factory_id' => $factory->id,
+            'post_type' => 'work_offer',
+            'title' => 'Need 6000kg 1x1 Rib',
+            'fabric_type' => '1x1 Rib',
+            'quantity_kg' => 6000,
+            'target_rate_tk' => 28,
+            'status' => 'open',
+        ])->assertRedirect(route('admin.posts.show', $post->id));
+        $this->assertSame('Need 6000kg 1x1 Rib', $post->fresh()?->title);
+
+        $this->post(route('admin.posts.quotations.store', $post->id), [
+            'factory_id' => $factory->id,
+            'bidder_name' => 'Padma Knitting',
+            'bidder_phone' => '01755667788',
+            'offered_rate_tk' => 27.5,
+            'estimated_days' => 14,
+            'allocated_machines' => 4,
+            'note' => 'Immediate slot available',
+        ])->assertRedirect();
+
+        $quotation = $post->quotations()->firstOrFail();
+        $this->delete(route('admin.posts.quotations.destroy', [$post->id, $quotation->id]))->assertRedirect();
+        $this->assertModelMissing($quotation);
+
+        $partner = Partner::create([
+            'user_id' => $user->id,
+            'partner_code' => 'PTR-950',
+            'total_referrals' => 4,
+            'active_factories_count' => 2,
+            'total_commission_tk' => 5000,
+            'withdrawn_commission_tk' => 1000,
+            'balance_commission_tk' => 4000,
+            'payout_method' => 'bkash',
+        ]);
+
+        $this->post(route('admin.partners.payout', $partner->id), ['amount_tk' => 1500])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+        $this->assertSame(2500.0, (float) $partner->fresh()?->withdrawn_commission_tk);
+        $this->assertSame(2500.0, (float) $partner->fresh()?->balance_commission_tk);
+
+        $this->post(route('admin.partners.payout', $partner->id), ['amount_tk' => 9000])
+            ->assertRedirect()
+            ->assertSessionHas('error');
+
+        $this->post(route('admin.free-machine-requests.store'), [
+            'factory_id' => $factory->id,
+            'party_code' => 'pty95',
+            'contact_person' => 'Mizan',
+            'fabrication' => 'Single Jersey 160',
+            'qty_kg' => 2000,
+            'machines_needed' => 3,
+            'spec_label' => '30x24G',
+            'status' => 'new',
+        ])->assertRedirect();
+        $this->assertNotNull(FreeMachineRequest::where('party_code', 'pty95')->first());
+
+        $this->post(route('admin.supplier-rfqs.store'), [
+            'factory_code' => $factory->code,
+            'category' => 'needle',
+            'item_name' => 'Groz-Beckert 24G Needle',
+            'qty_label' => '2000 pcs',
+            'need_by_label' => 'Tomorrow',
+            'status' => 'new',
+        ])->assertRedirect();
+        $this->assertNotNull(SupplierRfq::where('item_name', 'Groz-Beckert 24G Needle')->first());
     }
 }

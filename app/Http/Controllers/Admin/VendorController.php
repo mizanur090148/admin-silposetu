@@ -82,6 +82,7 @@ class VendorController extends Controller
             'vendors' => $vendors,
             'vendorParties' => $vendorParties,
             'vendorUsers' => $vendorUsers,
+            'existingVendorCodes' => Vendor::pluck('code')->values(),
             'counts' => $counts,
             'users' => User::orderBy('name')->get(['id', 'name', 'phone', 'role']),
             'factories' => Factory::orderBy('name')->get(['id', 'code', 'name']),

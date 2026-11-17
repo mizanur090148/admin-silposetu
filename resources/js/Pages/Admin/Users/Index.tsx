@@ -173,6 +173,18 @@ export default function Index({ users, counts, filters, factories, vendors, supp
                             <option value="1">Active Only</option>
                             <option value="0">Inactive Only</option>
                         </select>
+                        <select
+                            value={filters.subscription_plan || 'all'}
+                            onChange={(e) => applyFilter({ subscription_plan: e.target.value, page: 1 })}
+                            className="py-2 px-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                        >
+                            <option value="all">All Plans</option>
+                            <option value="free">Free</option>
+                            <option value="s">Starter (s)</option>
+                            <option value="g">Growth (g)</option>
+                            <option value="p">Pro (p)</option>
+                            <option value="e">Enterprise (e)</option>
+                        </select>
                         <button type="submit" className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-slate-900 dark:bg-slate-700 text-white">
                             Search
                         </button>
@@ -474,23 +486,41 @@ export default function Index({ users, counts, filters, factories, vendors, supp
                             </div>
                             <div>
                                 <label className="block font-semibold mb-1">Subscription Plan *</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={form.data.subscription_plan}
                                     onChange={(e) => form.setData('subscription_plan', e.target.value)}
                                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                />
-                            </div>
-                            <div>
-                                <label className="block font-semibold mb-1">Billing Cycle</label>
-                                <select
-                                    value={form.data.billing_cycle}
-                                    onChange={(e) => form.setData('billing_cycle', e.target.value as 'm' | 'y')}
-                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 >
-                                    <option value="m">Monthly (m)</option>
-                                    <option value="y">Yearly (y)</option>
+                                    <option value="free">Free (5 MCs)</option>
+                                    <option value="s">Starter (s — 10 MCs)</option>
+                                    <option value="g">Growth (g — 25 MCs)</option>
+                                    <option value="p">Pro (p — 60 MCs)</option>
+                                    <option value="e">Enterprise (e — Unlimited)</option>
                                 </select>
+                                {form.errors.subscription_plan && <p className="text-rose-500 mt-1">{form.errors.subscription_plan}</p>}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label className="block font-semibold mb-1">Billing Cycle</label>
+                                    <select
+                                        value={form.data.billing_cycle}
+                                        onChange={(e) => form.setData('billing_cycle', e.target.value as 'm' | 'y')}
+                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                    >
+                                        <option value="m">Monthly (m)</option>
+                                        <option value="y">Yearly (y)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block font-semibold mb-1">Trial Ends At</label>
+                                    <input
+                                        type="date"
+                                        value={form.data.trial_ends_at}
+                                        onChange={(e) => form.setData('trial_ends_at', e.target.value)}
+                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                    />
+                                    {form.errors.trial_ends_at && <p className="text-rose-500 mt-1">{form.errors.trial_ends_at}</p>}
+                                </div>
                             </div>
                             <div className="sm:col-span-2 flex flex-wrap gap-4 pt-1">
                                 <label className="flex items-center gap-1.5 font-medium">

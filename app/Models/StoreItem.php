@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class StoreItem extends Model
 {
@@ -33,5 +34,10 @@ class StoreItem extends Model
             'unit_price' => 'decimal:2',
             'rfq_sent' => 'boolean',
         ];
+    }
+
+    public function issueLogs(): HasMany
+    {
+        return $this->hasMany(StoreIssueLog::class, 'item_code', 'item_code');
     }
 }

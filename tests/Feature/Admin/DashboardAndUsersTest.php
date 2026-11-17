@@ -115,4 +115,19 @@ class DashboardAndUsersTest extends TestCase
         $response->assertSessionHasErrors(['phone', 'role']);
         $this->assertSame(2, User::count());
     }
+
+    public function test_users_index_filters_by_subscription_plan(): void
+    {
+        $admin = UserFactory::new()->admin()->create(['subscription_plan' => 'free']);
+        $growth = UserFactory::new()->create(['subscription_plan' => 'g']);
+
+        $this->withoutVite()->actingAs($admin);
+
+        $this->get(route('admin.users.index', ['subscription_plan' => 'g']))
+            ->assertInertia(fn ($page) => $page
+                ->component('Admin/Users/Index')
+                ->has('users.data', 1)
+                ->where('users.data.0.id', $growth->id)
+            );
+    }
 }

@@ -2,8 +2,8 @@ import React, { FormEvent, useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import Pagination from '@/Components/Pagination';
-import { FileQuestion, Pencil, Search, Trash2, X } from 'lucide-react';
-import { PaginatedData, SupplierRfq } from '@/types';
+import { FileQuestion, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { FactoryRef, PaginatedData, SupplierRfq } from '@/types';
 import { SUPPLIER_CATEGORY_LABELS } from '@/utils/labels';
 
 interface Props {
@@ -16,6 +16,7 @@ interface Props {
         lost: number;
     };
     factoryCodes: string[];
+    factories?: FactoryRef[];
     filters: {
         search: string;
         status: string;
@@ -31,11 +32,19 @@ const RFQ_STATUS: Record<string, { label: string; cls: string }> = {
     lost: { label: 'Lost', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300' },
 };
 
-export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
+export default function Index({ rfqs, counts, factoryCodes, factories = [], filters }: Props) {
     const [search, setSearch] = useState(filters.search || '');
+    const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState<SupplierRfq | null>(null);
 
     const form = useForm({
+        factory_code: factories[0]?.code || 'f1',
+        category: 'sinker',
+        item_name: '',
+        qty_label: '',
+        area: '',
+        phone: '',
+        need_by_label: '3 days',
         status: 'new',
         quoted_price: '',
         delivery_days: '',
@@ -46,26 +55,57 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
         router.get(route('admin.supplier-rfqs.index'), { ...filters, search, ...overrides }, { preserveState: true, replace: true });
     };
 
+    const openCreate = () => {
+        setEditing(null);
+        form.clearErrors();
+        form.setData({
+            factory_code: factories[0]?.code || 'f1',
+            category: 'sinker',
+            item_name: '',
+            qty_label: '',
+            area: '',
+            phone: '',
+            need_by_label: '3 days',
+            status: 'new',
+            quoted_price: '',
+            delivery_days: '',
+            note: '',
+        });
+        setShowModal(true);
+    };
+
     const openEdit = (rfq: SupplierRfq) => {
         setEditing(rfq);
         form.clearErrors();
         form.setData({
+            factory_code: rfq.factory_code,
+            category: rfq.category || 'sinker',
+            item_name: rfq.item_name,
+            qty_label: rfq.qty_label,
+            area: rfq.area || '',
+            phone: rfq.phone || '',
+            need_by_label: rfq.need_by_label,
             status: rfq.status,
             quoted_price: rfq.quoted_price || '',
             delivery_days: rfq.delivery_days || '',
             note: rfq.note || '',
         });
+        setShowModal(true);
     };
 
-    const submitEdit = (e: FormEvent) => {
+    const submitForm = (e: FormEvent) => {
         e.preventDefault();
-        if (!editing) {
-            return;
+        if (editing) {
+            form.put(route('admin.supplier-rfqs.update', editing.id), {
+                preserveScroll: true,
+                onSuccess: () => setShowModal(false),
+            });
+        } else {
+            form.post(route('admin.supplier-rfqs.store'), {
+                preserveScroll: true,
+                onSuccess: () => setShowModal(false),
+            });
         }
-        form.put(route('admin.supplier-rfqs.update', editing.id), {
-            preserveScroll: true,
-            onSuccess: () => setEditing(null),
-        });
     };
 
     const handleDelete = (rfq: SupplierRfq) => {
@@ -95,14 +135,14 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
                     ))}
                 </div>
 
-                {/* Filters */}
-                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+                {/* Filters & Create */}
+                <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
                             applyFilter({ page: 1 });
                         }}
-                        className="flex flex-wrap items-center gap-2"
+                        className="flex flex-wrap items-center gap-2 flex-1"
                     >
                         <div className="relative flex-1 min-w-[200px]">
                             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -141,6 +181,14 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
                             Search
                         </button>
                     </form>
+
+                    <button
+                        type="button"
+                        onClick={openCreate}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-blue-600 text-white hover:bg-blue-500 shrink-0"
+                    >
+                        <Plus className="w-3.5 h-3.5" /> New RFQ
+                    </button>
                 </div>
 
                 {/* Table */}
@@ -149,9 +197,9 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
                         <table className="w-full text-left border-collapse text-xs">
                             <thead>
                                 <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-800/40">
-                                    <th className="py-3 px-4">RFQ & Factory</th>
-                                    <th className="py-3 px-4">Item & Qty</th>
-                                    <th className="py-3 px-4">Location & Contact</th>
+                                    <th className="py-3 px-4">RFQ &amp; Factory</th>
+                                    <th className="py-3 px-4">Item &amp; Qty</th>
+                                    <th className="py-3 px-4">Location &amp; Contact</th>
                                     <th className="py-3 px-4">Quote Response</th>
                                     <th className="py-3 px-4">Status</th>
                                     <th className="py-3 px-4 text-right">Actions</th>
@@ -211,7 +259,7 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
                                                     <button
                                                         type="button"
                                                         onClick={() => openEdit(rfq)}
-                                                        title="Update RFQ Quote & Status"
+                                                        title="Edit / Update RFQ"
                                                         className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
                                                     >
                                                         <Pencil className="w-3.5 h-3.5" />
@@ -253,19 +301,82 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
                 </div>
             </div>
 
-            {editing && (
-                <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg">
+            {showModal && (
+                <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-4 overflow-y-auto">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xl my-8">
                         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-800">
                             <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                                Update RFQ {editing.rfq_no}
+                                {editing ? `Update RFQ ${editing.rfq_no}` : 'Create Supplier RFQ'}
                             </h3>
-                            <button type="button" onClick={() => setEditing(null)}>
+                            <button type="button" onClick={() => setShowModal(false)}>
                                 <X className="w-4 h-4 text-slate-400" />
                             </button>
                         </div>
 
-                        <form onSubmit={submitEdit} className="p-5 space-y-4 text-xs">
+                        <form onSubmit={submitForm} className="p-5 grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label className="block font-semibold mb-1">Factory Code *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    list="rfq-factories"
+                                    value={form.data.factory_code}
+                                    onChange={(e) => form.setData('factory_code', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                                <datalist id="rfq-factories">
+                                    {factories.map((f) => (
+                                        <option key={f.id} value={f.code}>
+                                            {f.name}
+                                        </option>
+                                    ))}
+                                </datalist>
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Category</label>
+                                <select
+                                    value={form.data.category}
+                                    onChange={(e) => form.setData('category', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                >
+                                    {Object.entries(SUPPLIER_CATEGORY_LABELS).map(([k, v]) => (
+                                        <option key={k} value={k}>
+                                            {v}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block font-semibold mb-1">Requested Item Name *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={form.data.item_name}
+                                    onChange={(e) => form.setData('item_name', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Qty Label *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={form.data.qty_label}
+                                    onChange={(e) => form.setData('qty_label', e.target.value)}
+                                    placeholder="e.g. 5000 pcs / 100 L"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Need By Label *</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={form.data.need_by_label}
+                                    onChange={(e) => form.setData('need_by_label', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
                             <div>
                                 <label className="block font-semibold mb-1">Status *</label>
                                 <select
@@ -279,29 +390,36 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
                                     <option value="lost">Lost</option>
                                 </select>
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block font-semibold mb-1">Quoted Price</label>
-                                    <input
-                                        type="text"
-                                        value={form.data.quoted_price}
-                                        onChange={(e) => form.setData('quoted_price', e.target.value)}
-                                        placeholder="e.g. ৳42,500"
-                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block font-semibold mb-1">Delivery Days</label>
-                                    <input
-                                        type="text"
-                                        value={form.data.delivery_days}
-                                        onChange={(e) => form.setData('delivery_days', e.target.value)}
-                                        placeholder="e.g. 3-5 days"
-                                        className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
-                                    />
-                                </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Quoted Price</label>
+                                <input
+                                    type="text"
+                                    value={form.data.quoted_price}
+                                    onChange={(e) => form.setData('quoted_price', e.target.value)}
+                                    placeholder="e.g. ৳42,500"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
                             </div>
                             <div>
+                                <label className="block font-semibold mb-1">Delivery Days</label>
+                                <input
+                                    type="text"
+                                    value={form.data.delivery_days}
+                                    onChange={(e) => form.setData('delivery_days', e.target.value)}
+                                    placeholder="e.g. 3-5 days"
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div>
+                                <label className="block font-semibold mb-1">Phone</label>
+                                <input
+                                    type="text"
+                                    value={form.data.phone}
+                                    onChange={(e) => form.setData('phone', e.target.value)}
+                                    className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                />
+                            </div>
+                            <div className="col-span-2">
                                 <label className="block font-semibold mb-1">Admin / Quote Note</label>
                                 <textarea
                                     rows={3}
@@ -310,10 +428,10 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
                                     className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                                 />
                             </div>
-                            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+                            <div className="col-span-2 flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                                 <button
                                     type="button"
-                                    onClick={() => setEditing(null)}
+                                    onClick={() => setShowModal(false)}
                                     className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700"
                                 >
                                     Cancel
@@ -323,7 +441,7 @@ export default function Index({ rfqs, counts, factoryCodes, filters }: Props) {
                                     disabled={form.processing}
                                     className="px-5 py-2 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 disabled:opacity-50"
                                 >
-                                    Save RFQ
+                                    {editing ? 'Save RFQ' : 'Create RFQ'}
                                 </button>
                             </div>
                         </form>
